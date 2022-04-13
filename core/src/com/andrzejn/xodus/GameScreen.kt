@@ -139,7 +139,7 @@ class GameScreen(
          * Invoked when the player drags something on the screen.
          */
         override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
-            val v = ctx.pointerPosition(input.x, input.y)
+            //val v = ctx.pointerPosition(input.x, input.y)
             return super.touchDragged(screenX, screenY, pointer)
         }
 
@@ -147,7 +147,7 @@ class GameScreen(
          * Called when screen is untouched (mouse button released)
          */
         override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-            val v = ctx.pointerPosition(input.x, input.y)
+            //val v = ctx.pointerPosition(input.x, input.y)
             return super.touchUp(screenX, screenY, pointer, button)
         }
 

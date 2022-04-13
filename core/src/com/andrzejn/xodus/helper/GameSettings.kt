@@ -8,7 +8,7 @@ import java.util.*
  */
 class GameSettings {
     private val pref by lazy { Gdx.app.getPreferences("com.andrzejn.xodus") }
-    private val sMAXRADIUS = "maxRadius"
+    private val sFIELDWIDTH = "fieldWidth"
     private val sBALLSCOUNT = "ballsCount"
     private val sCOLORSCOUNT = "colorsCount"
     private val sSAVEDGAME = "savedGame"
@@ -16,7 +16,7 @@ class GameSettings {
     private val sINGAMEDURATION = "inGameDuration"
     private val sRECORDMOVES = "recordMoves"
     private val sRECORDPOINTS = "recordPoints"
-    private var iMaxRadius: Float = 4.5f
+    private var iFieldWidth: Int = 7
     private var iBallsCount: Int = 20
     private var iColorsCount: Int = 6
     private var iDarkTheme: Boolean = true
@@ -26,9 +26,10 @@ class GameSettings {
      * Reset game settings to default values
      */
     fun reset() {
-        iMaxRadius = pref.getFloat(sMAXRADIUS, 4.5f)
-        iMaxRadius = iMaxRadius.coerceIn(3f, 6f)
-        maxRadius = iMaxRadius
+        iFieldWidth = pref.getInteger(sFIELDWIDTH, 7)
+        if (iFieldWidth !in listOf(5, 7, 9, 11))
+            iFieldWidth = 7
+        fieldWidth = iFieldWidth
         iBallsCount = pref.getInteger(sBALLSCOUNT, 20)
         iBallsCount = iBallsCount.coerceIn(20, 60)
         ballsCount = iBallsCount
@@ -42,11 +43,11 @@ class GameSettings {
     /**
      * Maximum connector radius, 3..6
      */
-    var maxRadius: Float
-        get() = iMaxRadius
+    var fieldWidth: Int
+        get() = iFieldWidth
         set(value) {
-            iMaxRadius = value
-            pref.putFloat(sMAXRADIUS, value)
+            iFieldWidth = value
+            pref.putInteger(sFIELDWIDTH, value)
             pref.flush()
         }
 
@@ -108,13 +109,8 @@ class GameSettings {
      * Key name for storing the records for the current tile type - game size - colors
      */
     private fun keyName(prefix: String): String {
-        return "$prefix$iBallsCount$iColorsCount${serializeFloat(iMaxRadius)}"
+        return "$prefix$iBallsCount$iColorsCount$iFieldWidth}"
     }
-
-    /***
-     * Stable float serialization to the N.N format
-     */
-    private fun serializeFloat(f: Float): String = String.format(Locale.ROOT, "%.1f", f)
 
     /**
      * Record moves value for the current balls count - max radius - colors
@@ -140,28 +136,29 @@ class GameSettings {
      * Serialize game settings, to include into the saved game. Always 6 characters.
      */
     fun serialize(sb: com.badlogic.gdx.utils.StringBuilder) {
-        sb.append(serializeFloat(iMaxRadius)).append(ballsCount).append(colorsCount)
+        sb.append(iFieldWidth, 2).append(ballsCount).append(colorsCount)
     }
 
     /**
      * Deserialize game settings from the saved game
      */
     fun deserialize(s: String): Boolean {
-        if (s.length != 6) {
+        if (s.length != 6) { // TODO Fix the count when I know the settings size
             reset()
             return false
         }
-        val mr = s.substring(0..2).toFloatOrNull()
+        val fv = s.substring(0..1).toIntOrNull()
+
         val bc = s.substring(3..4).toIntOrNull()
         val cc = s[5].digitToIntOrNull()
-        if ((mr == null || mr !in 3f..6f)
+        if ((fv == null || fv !in listOf(5, 7, 9, 11))
             || bc == null || bc !in 20..60
             || cc == null || cc !in 6..7
         ) {
             reset()
             return false
         }
-        maxRadius = mr
+        fieldWidth = fv
         ballsCount = bc
         colorsCount = cc
         return true

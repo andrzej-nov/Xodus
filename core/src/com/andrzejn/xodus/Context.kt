@@ -3,7 +3,6 @@ package com.andrzejn.xodus
 import aurelienribon.tweenengine.Tween
 import aurelienribon.tweenengine.TweenManager
 import com.andrzejn.xodus.helper.*
-import com.andrzejn.xodus.logic.WorldConstants
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.assets.loaders.TextureAtlasLoader
@@ -53,11 +52,6 @@ class Context(
     val tweenManager: TweenManager = TweenManager()
 
     /**
-     * Values and related functions that are constant for the duration of the game until the screen size changes
-     */
-    lateinit var wc: WorldConstants
-
-    /**
      * The game settings
      */
     val gs: GameSettings = GameSettings()
@@ -77,7 +71,7 @@ class Context(
     }
 
     /**
-     * Many times we'll need to fit a sprite into arbitrary rectangle, retaining proportions
+     * Fit a sprite into given rectangle, retaining proportions
      */
     fun fitToRect(s: Sprite, wBound: Float, hBound: Float) {
         var width = wBound
