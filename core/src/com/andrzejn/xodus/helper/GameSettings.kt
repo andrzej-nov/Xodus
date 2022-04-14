@@ -17,7 +17,7 @@ class GameSettings {
     private val sRECORDMOVES = "recordMoves"
     private val sRECORDPOINTS = "recordPoints"
     private var iFieldWidth: Int = 7
-    private var iBallsCount: Int = 20
+    private var iBallsCount: Int = 3
     private var iColorsCount: Int = 6
     private var iDarkTheme: Boolean = true
     private var iInGameDuration: Long = 0
@@ -27,11 +27,12 @@ class GameSettings {
      */
     fun reset() {
         iFieldWidth = pref.getInteger(sFIELDWIDTH, 7)
-        if (iFieldWidth !in listOf(5, 7, 9, 11))
-            iFieldWidth = 7
+        if (iFieldWidth !in listOf(7, 9, 11, 13))
+            iFieldWidth = 9
         fieldWidth = iFieldWidth
-        iBallsCount = pref.getInteger(sBALLSCOUNT, 20)
-        iBallsCount = iBallsCount.coerceIn(20, 60)
+        iBallsCount = pref.getInteger(sBALLSCOUNT, 3)
+        if (iBallsCount > (iFieldWidth - 1) / 2)
+            iBallsCount = (iFieldWidth - 1) / 2
         ballsCount = iBallsCount
         iColorsCount = pref.getInteger(sCOLORSCOUNT, 6)
         iColorsCount = iColorsCount.coerceIn(6, 7)

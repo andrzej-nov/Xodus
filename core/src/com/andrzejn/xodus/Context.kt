@@ -175,7 +175,7 @@ class Context(
      * Light (bright) colors palette for the tile lines
      */
     private val light: Array<Color> = arrayOf(
-        Color.WHITE,
+        Color.GRAY,
         Color(0xd1b153ff.toInt()),
         Color(0x6d9edbff),
         Color(0x8ab775ff.toInt()),
@@ -189,7 +189,7 @@ class Context(
      * Darker colors palette for the tile lines' edges
      */
     private val dark: Array<Color> = arrayOf(
-        Color.LIGHT_GRAY,
+        Color.DARK_GRAY,
         Color(0xbf9000ff.toInt()),
         Color(0x2265bcff),
         Color(0x38761dff),

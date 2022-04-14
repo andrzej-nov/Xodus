@@ -1,15 +1,17 @@
 package com.andrzejn.xodus.logic
 
+import com.andrzejn.xodus.Context
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.math.Vector2
 
 /**
  * Line track segment (lineTB or lineLR)
  */
-class LineSegment(type: SegmentType) : TrackSegment(type) {
+class LineSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
     /**
      * Coordinates are relative to the tile left-bottom corner
      */
-    val ends: Pair<Vector2, Vector2> = Vector2() to Vector2()
+    val ends = Array(2) { Vector2() }
 
     /**
      * The tile square side length. Used to calculate screen positions of the segment parts.
@@ -21,12 +23,12 @@ class LineSegment(type: SegmentType) : TrackSegment(type) {
             super.sideLen = value
             when (type) {
                 SegmentType.LineBT -> {
-                    ends.first.set(value / 2, 0f)
-                    ends.second.set(value / 2, value)
+                    ends[0].set(value / 2, 0f)
+                    ends[1].set(value / 2, value)
                 }
                 else -> {
-                    ends.first.set(0f, value / 2)
-                    ends.second.set(value, value / 2)
+                    ends[0].set(0f, value / 2)
+                    ends[1].set(value, value / 2)
                 }
             }
             this.split = super.split // Trigger splitPos update
@@ -58,5 +60,14 @@ class LineSegment(type: SegmentType) : TrackSegment(type) {
             SegmentType.LineBT -> v.set(sideLen / 2, sideLen * split)
             else -> v.set(sideLen * split, sideLen / 2)
         }
+    }
+
+    private val e = Vector2()
+    private val s = Vector2()
+    override fun render(ctx: Context, basePos: Vector2) {
+        s.set(splitPos).add(basePos)
+        if (split > 0)
+            ctx.sd.line(e.set(ends[0]).add(basePos), s, ctx.theme.dark[color[0]], 4f)
+        ctx.sd.line(s, e.set(ends[1]).add(basePos), ctx.theme.dark[color[1]], 4f)
     }
 }

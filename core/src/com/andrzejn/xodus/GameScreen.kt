@@ -1,10 +1,13 @@
 package com.andrzejn.xodus
 
+import com.andrzejn.xodus.logic.Field
 import com.badlogic.gdx.Gdx.input
 import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.math.Vector2
 import ktx.app.KtxScreen
 import java.util.*
+import kotlin.math.min
 
 /**
  * The main game screen with the UI logic
@@ -25,7 +28,10 @@ class GameScreen(
 
     init {
         ctx.setTheme()
+        newGame(false)
     }
+
+    lateinit var field: Field
 
     /**
      * Start new game and load saved one if any
@@ -34,16 +40,15 @@ class GameScreen(
         ctx.score.reset()
         updateInGameDuration()
         timeStart = Calendar.getInstance().timeInMillis
-        if (loadSavedGame)
-            try {
-                val s = ctx.sav.savedGame()
-                ctx.sav.loadSettingsAndScore(s)
-                //world.deserialize(s)
-            } catch (ex: Exception) {
-                // Something wrong. Just recreate new World and start new game
-                //world = World(ctx)
-            }
-        resize(ctx.wc.width.toInt(), ctx.wc.height.toInt())
+        if (loadSavedGame) try {
+            val s = ctx.sav.savedGame()
+            ctx.sav.loadSettingsAndScore(s)
+            //world.deserialize(s)
+        } catch (ex: Exception) {
+            // Something wrong. Just recreate new World and start new game
+            //world = World(ctx)
+        }
+        else field = Field(ctx).also { it.newGame() }
     }
 
     /**
@@ -56,11 +61,30 @@ class GameScreen(
     }
 
     /**
+     * Bottom-left corner of the board
+     */
+    val basePos = Vector2()
+
+    /**
+     * The squre cell side length
+     */
+    var sideLen: Float = 0f
+    var fieldWidth: Float = 0f
+    var fieldHeight: Float = 0f
+
+    /**
      * Handles window resizing
      */
     override fun resize(width: Int, height: Int) {
         super.resize(width, height)
         ctx.setCamera(width, height)
+
+        sideLen = min(width.toFloat() / ctx.gs.fieldWidth, height.toFloat() / 8)
+        fieldWidth = sideLen * ctx.gs.fieldWidth
+        fieldHeight = sideLen * 8
+        basePos.set((width - fieldWidth) / 2, (height - fieldHeight) / 2)
+        field.sideLen = sideLen
+
     }
 
     /**
@@ -98,8 +122,7 @@ class GameScreen(
      * Autosaves the game every 5 seconds
      */
     private fun autoSaveGame() {
-        if (!thereWasAMove)
-            return
+        if (!thereWasAMove) return
         ctx.sav.saveGame(/*world*/)
         thereWasAMove = false
     }
@@ -118,7 +141,27 @@ class GameScreen(
         if (!ctx.batch.isDrawing) ctx.batch.begin()
         // Draw screen background and border panels
         ctx.sd.setColor(Color(ctx.theme.gameboardBackground))
-        ctx.sd.filledRectangle(0f, 0f, ctx.wc.width, ctx.wc.height)
+        ctx.sd.filledRectangle(basePos.x, basePos.y, basePos.x + fieldWidth, basePos.y + fieldHeight)
+        ctx.sd.setColor(Color(ctx.theme.gameBorders))
+        (0..8).forEach { y ->
+            ctx.sd.line(
+                basePos.x,
+                basePos.y + y * sideLen,
+                basePos.x + fieldWidth,
+                basePos.y + y * sideLen,
+                2f
+            )
+        }
+        (0..ctx.gs.fieldWidth).forEach { x ->
+            ctx.sd.line(
+                basePos.x + x * sideLen,
+                basePos.y,
+                basePos.x + x * sideLen,
+                basePos.y + fieldHeight,
+                2f
+            )
+        }
+        field.render(basePos)
         if (ctx.batch.isDrawing) ctx.batch.end()
     }
 

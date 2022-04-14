@@ -1,12 +1,14 @@
 package com.andrzejn.xodus.logic
 
+import com.andrzejn.xodus.Context
 import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.graphics.Color
 import kotlin.math.PI
 
 /**
  * Arc track segment (arcLT, arcTR, arcRB, arcBL)
  */
-class ArcSegment(type: SegmentType) : TrackSegment(type) {
+class ArcSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
     /**
      * Arc radians size
      */
@@ -79,5 +81,16 @@ class ArcSegment(type: SegmentType) : TrackSegment(type) {
      */
     override fun coordinatesOf(split: Float): Vector2 {
         return v.set(radius, 0f).rotateRad(angle + radians * split).add(center)
+    }
+
+    val c = Vector2()
+    override fun render(ctx: Context, basePos: Vector2) {
+        c.set(center).add(basePos)
+        if (split > 0) {
+            ctx.sd.setColor(ctx.theme.dark[color[0]])
+            ctx.sd.arc(c.x, c.y, radius, angle, splitRadians, 4f)
+        }
+        ctx.sd.setColor(ctx.theme.dark[color[1]])
+        ctx.sd.arc(c.x, c.y, radius, angle + splitRadians, radians - splitRadians, 4f)
     }
 }

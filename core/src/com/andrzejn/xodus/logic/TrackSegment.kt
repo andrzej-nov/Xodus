@@ -1,5 +1,6 @@
 package com.andrzejn.xodus.logic
 
+import com.andrzejn.xodus.Context
 import com.badlogic.gdx.math.Vector2
 
 /**
@@ -8,17 +9,21 @@ import com.badlogic.gdx.math.Vector2
  * May be colored with a single color or with two colors starting on both sides and meeting at some segment point.
  * Segment colors and the point position may change.
  */
-abstract class TrackSegment(val type: SegmentType) {
+abstract class TrackSegment(
+    /**
+     * The segment type
+     */
+    val type: SegmentType,
+    /**
+     * The tile to which that segment belongs
+     */
+    val tile: Tile
+) {
     /**
      * The segment colors. Colors start from both ends of the segment and meet at some position in between.
      * Both colors may be the same.
      */
-    val color: Pair<Int, Int> = 0 to 0
-
-    /**
-     * The tile sides where this segment starts and ends
-     */
-    val sides: Pair<Side, Side> = type.sides
+    val color: Array<Int> = arrayOf(0, 0)
 
     private var _split: Float = 0f
 
@@ -50,13 +55,31 @@ abstract class TrackSegment(val type: SegmentType) {
      * Point coordinates for the given ball position.
      * Relative to the tile bottom-left corner.
      */
-    fun coordinatesOf(position: Float, fromSide: Side): Vector2 = coordinatesOf(ballPositionToSplit(position, fromSide))
+    fun coordinatesOf(b: Ball): Vector2 = coordinatesOf(ballPositionToSplit(b))
 
     /**
      * Translates the current ball position into the split value
      */
-    fun ballPositionToSplit(position: Float, fromSide: Side): Float =
-        if (fromSide == type.sides.first) position else 1f - position
+    fun ballPositionToSplit(b: Ball): Float =
+        if (isMovingFromSegmentStart(b)) b.position else 1f - b.position
+
+    fun isMovingFromSegmentStart(b: Ball): Boolean = b.movingFromSide == type.sides[0]
+
+    fun aheadSideIndex(b: Ball): Int = if (isMovingFromSegmentStart(b)) 1 else 0
+
+    fun behindSideIndex(b: Ball): Int = if (isMovingFromSegmentStart(b)) 0 else 1
+
+
+    /**
+     * Colors the segment by the ball
+     */
+    fun setColorFrom(b: Ball) {
+        val ahead = aheadSideIndex(b)
+        color[ahead] = b.color
+        split = ballPositionToSplit(b)
+    }
+
+    abstract fun render(ctx: Context, basePos: Vector2)
 
     private var _sideLen: Float = 0f
 
@@ -71,16 +94,16 @@ abstract class TrackSegment(val type: SegmentType) {
         }
 
     /**
-     * Type of the segment. Used primarily for the initial random segments generation.
+     * Type of the segment. Also references the sides it connects.
      */
     @Suppress("KDocMissingDocumentation")
-    enum class SegmentType(val sides: Pair<Side, Side>) {
-        LineBT(Side.Bottom to Side.Top),
-        LineLR(Side.Left to Side.Right),
-        ArcLT(Side.Left to Side.Top),
-        ArcTR(Side.Top to Side.Right),
-        ArcRB(Side.Right to Side.Bottom),
-        ArcBL(Side.Bottom to Side.Left)
+    enum class SegmentType(val sides: Array<Side>) {
+        LineBT(arrayOf(Side.Bottom, Side.Top)),
+        LineLR(arrayOf(Side.Left, Side.Right)),
+        ArcLT(arrayOf(Side.Left, Side.Top)),
+        ArcTR(arrayOf(Side.Top, Side.Right)),
+        ArcRB(arrayOf(Side.Right, Side.Bottom)),
+        ArcBL(arrayOf(Side.Bottom, Side.Left))
     }
 
     /**
@@ -88,7 +111,15 @@ abstract class TrackSegment(val type: SegmentType) {
      */
     @Suppress("KDocMissingDocumentation")
     enum class Side {
-        Top, Right, Bottom, Left
+        Top, Right, Bottom, Left;
+
+        val otherSide: Side
+            get() = when (this) {
+                Top -> Bottom
+                Right -> Left
+                Bottom -> Top
+                Left -> Right
+            }
     }
 
     /**
@@ -98,9 +129,9 @@ abstract class TrackSegment(val type: SegmentType) {
         /**
          * Create the TrackSegment instance matching the type
          */
-        fun of(type: SegmentType): TrackSegment = when (type) {
-            SegmentType.LineBT, SegmentType.LineLR -> LineSegment(type)
-            else -> ArcSegment(type)
+        fun of(type: SegmentType, tile: Tile): TrackSegment = when (type) {
+            SegmentType.LineBT, SegmentType.LineLR -> LineSegment(type, tile)
+            else -> ArcSegment(type, tile)
         }
     }
 }

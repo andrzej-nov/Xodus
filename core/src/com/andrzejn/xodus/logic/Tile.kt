@@ -1,5 +1,9 @@
 package com.andrzejn.xodus.logic
 
+import com.andrzejn.xodus.Context
+import com.badlogic.gdx.math.Vector2
+import space.earlygrey.shapedrawer.ShapeDrawer
+
 /**
  * Square tile with track fragments on it. Once placed to the field, it is never moved until the whole bottom line
  * disappears.
@@ -44,13 +48,24 @@ class Tile {
     private fun randomSegments(): List<TrackSegment> {
         val sidesCovered = mutableSetOf<TrackSegment.Side>()
         return TrackSegment.SegmentType.values().also { it.shuffle() }.fold(mutableListOf()) { list, type ->
-            list.add(TrackSegment.of(type))
-            sidesCovered.add(type.sides.first)
-            sidesCovered.add(type.sides.second)
+            list.add(TrackSegment.of(type, this))
+            sidesCovered.addAll(type.sides)
             if (sidesCovered.size == 4)
                 return list
             list
         }
+    }
+
+    fun render(ctx: Context, basePos: Vector2) {
+        segments.forEach { it.render(ctx, basePos) }
+    }
+
+    private val v = Vector2()
+    fun middleOfSide(side: TrackSegment.Side): Vector2 = when (side) {
+        TrackSegment.Side.Top -> v.set(sideLen / 2, sideLen)
+        TrackSegment.Side.Right -> v.set(sideLen, sideLen / 2)
+        TrackSegment.Side.Bottom -> v.set(sideLen / 2, 0f)
+        TrackSegment.Side.Left -> v.set(0f, sideLen / 2)
     }
 
     /**
