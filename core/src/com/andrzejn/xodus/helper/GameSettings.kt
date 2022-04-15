@@ -1,14 +1,13 @@
 package com.andrzejn.xodus.helper
 
 import com.badlogic.gdx.Gdx
-import java.util.*
 
 /**
  * Game settings and saved game. Stored in the GDX system-dependent Preferences
  */
 class GameSettings {
     private val pref by lazy { Gdx.app.getPreferences("com.andrzejn.xodus") }
-    private val sFIELDWIDTH = "fieldWidth"
+    private val sFIELDSIZE = "fieldSize"
     private val sBALLSCOUNT = "ballsCount"
     private val sCOLORSCOUNT = "colorsCount"
     private val sSAVEDGAME = "savedGame"
@@ -16,7 +15,7 @@ class GameSettings {
     private val sINGAMEDURATION = "inGameDuration"
     private val sRECORDMOVES = "recordMoves"
     private val sRECORDPOINTS = "recordPoints"
-    private var iFieldWidth: Int = 7
+    private var iFieldSize: Int = 7
     private var iBallsCount: Int = 3
     private var iColorsCount: Int = 6
     private var iDarkTheme: Boolean = true
@@ -26,13 +25,13 @@ class GameSettings {
      * Reset game settings to default values
      */
     fun reset() {
-        iFieldWidth = pref.getInteger(sFIELDWIDTH, 7)
-        if (iFieldWidth !in listOf(7, 9, 11, 13))
-            iFieldWidth = 9
-        fieldWidth = iFieldWidth
+        iFieldSize = pref.getInteger(sFIELDSIZE, 7)
+        if (iFieldSize !in listOf(7, 9, 11, 13))
+            iFieldSize = 9
+        fieldSize = iFieldSize
         iBallsCount = pref.getInteger(sBALLSCOUNT, 3)
-        if (iBallsCount > (iFieldWidth - 1) / 2)
-            iBallsCount = (iFieldWidth - 1) / 2
+        if (iBallsCount > (iFieldSize - 1) / 2)
+            iBallsCount = (iFieldSize - 1) / 2
         ballsCount = iBallsCount
         iColorsCount = pref.getInteger(sCOLORSCOUNT, 6)
         iColorsCount = iColorsCount.coerceIn(6, 7)
@@ -44,11 +43,11 @@ class GameSettings {
     /**
      * Maximum connector radius, 3..6
      */
-    var fieldWidth: Int
-        get() = iFieldWidth
+    var fieldSize: Int
+        get() = iFieldSize
         set(value) {
-            iFieldWidth = value
-            pref.putInteger(sFIELDWIDTH, value)
+            iFieldSize = value
+            pref.putInteger(sFIELDSIZE, value)
             pref.flush()
         }
 
@@ -110,7 +109,7 @@ class GameSettings {
      * Key name for storing the records for the current tile type - game size - colors
      */
     private fun keyName(prefix: String): String {
-        return "$prefix$iBallsCount$iColorsCount$iFieldWidth}"
+        return "$prefix$iBallsCount$iColorsCount$iFieldSize}"
     }
 
     /**
@@ -137,7 +136,7 @@ class GameSettings {
      * Serialize game settings, to include into the saved game. Always 6 characters.
      */
     fun serialize(sb: com.badlogic.gdx.utils.StringBuilder) {
-        sb.append(iFieldWidth, 2).append(ballsCount).append(colorsCount)
+        sb.append(iFieldSize, 2).append(ballsCount).append(colorsCount)
     }
 
     /**
@@ -159,7 +158,7 @@ class GameSettings {
             reset()
             return false
         }
-        fieldWidth = fv
+        fieldSize = fv
         ballsCount = bc
         colorsCount = cc
         return true

@@ -1,7 +1,6 @@
 package com.andrzejn.xodus.logic
 
 import com.andrzejn.xodus.Context
-import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.math.Vector2
 
 /**
@@ -11,7 +10,7 @@ class LineSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
     /**
      * Coordinates are relative to the tile left-bottom corner
      */
-    val ends = Array(2) { Vector2() }
+    private val ends = Array(2) { Vector2() }
 
     /**
      * The tile square side length. Used to calculate screen positions of the segment parts.
@@ -62,12 +61,18 @@ class LineSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
         }
     }
 
-    private val e = Vector2()
+    /**
+     * Value for internal calculations to reduce GC load
+     */
     private val s = Vector2()
+
+    /**
+     * Render this segment
+     */
     override fun render(ctx: Context, basePos: Vector2) {
         s.set(splitPos).add(basePos)
         if (split > 0)
-            ctx.sd.line(e.set(ends[0]).add(basePos), s, ctx.theme.dark[color[0]], 4f)
-        ctx.sd.line(s, e.set(ends[1]).add(basePos), ctx.theme.dark[color[1]], 4f)
+            ctx.sd.line(v.set(ends[0]).add(basePos), s, ctx.theme.dark[color[0]], 4f)
+        ctx.sd.line(s, v.set(ends[1]).add(basePos), ctx.theme.dark[color[1]], 4f)
     }
 }

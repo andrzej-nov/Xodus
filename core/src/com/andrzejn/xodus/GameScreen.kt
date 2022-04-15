@@ -2,6 +2,7 @@ package com.andrzejn.xodus
 
 import com.andrzejn.xodus.logic.Field
 import com.badlogic.gdx.Gdx.input
+import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.math.Vector2
@@ -48,7 +49,10 @@ class GameScreen(
             // Something wrong. Just recreate new World and start new game
             //world = World(ctx)
         }
-        else field = Field(ctx).also { it.newGame() }
+        else field = Field(ctx).also {
+            it.newGame()
+            it.sideLen = sideLen
+        }
     }
 
     /**
@@ -69,8 +73,7 @@ class GameScreen(
      * The squre cell side length
      */
     var sideLen: Float = 0f
-    var fieldWidth: Float = 0f
-    var fieldHeight: Float = 0f
+    var fieldSquareSide: Float = 0f
 
     /**
      * Handles window resizing
@@ -79,10 +82,12 @@ class GameScreen(
         super.resize(width, height)
         ctx.setCamera(width, height)
 
-        sideLen = min(width.toFloat() / ctx.gs.fieldWidth, height.toFloat() / 8)
-        fieldWidth = sideLen * ctx.gs.fieldWidth
-        fieldHeight = sideLen * 8
-        basePos.set((width - fieldWidth) / 2, (height - fieldHeight) / 2)
+        sideLen = if (width > height)
+            min(width.toFloat() / (ctx.gs.fieldSize + 4), height.toFloat() / ctx.gs.fieldSize)
+        else
+            min(width.toFloat() / ctx.gs.fieldSize, height.toFloat() / (ctx.gs.fieldSize + 4))
+        fieldSquareSide = sideLen * ctx.gs.fieldSize
+        basePos.set((width - fieldSquareSide) / 2, (height - fieldSquareSide) / 2)
         field.sideLen = sideLen
 
     }
@@ -141,24 +146,24 @@ class GameScreen(
         if (!ctx.batch.isDrawing) ctx.batch.begin()
         // Draw screen background and border panels
         ctx.sd.setColor(Color(ctx.theme.gameboardBackground))
-        ctx.sd.filledRectangle(basePos.x, basePos.y, basePos.x + fieldWidth, basePos.y + fieldHeight)
+        ctx.sd.filledRectangle(basePos.x, basePos.y, basePos.x + fieldSquareSide, basePos.y + fieldSquareSide)
         ctx.sd.setColor(Color(ctx.theme.gameBorders))
-        (0..8).forEach { y ->
+        (0..ctx.gs.fieldSize).forEach { y ->
             ctx.sd.line(
                 basePos.x,
                 basePos.y + y * sideLen,
-                basePos.x + fieldWidth,
+                basePos.x + fieldSquareSide,
                 basePos.y + y * sideLen,
-                2f
+                1f
             )
         }
-        (0..ctx.gs.fieldWidth).forEach { x ->
+        (0..ctx.gs.fieldSize).forEach { x ->
             ctx.sd.line(
                 basePos.x + x * sideLen,
                 basePos.y,
                 basePos.x + x * sideLen,
-                basePos.y + fieldHeight,
-                2f
+                basePos.y + fieldSquareSide,
+                1f
             )
         }
         field.render(basePos)
@@ -190,6 +195,8 @@ class GameScreen(
          * Called when screen is untouched (mouse button released)
          */
         override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+            if (button == Input.Buttons.RIGHT)
+                newGame(false)
             //val v = ctx.pointerPosition(input.x, input.y)
             return super.touchUp(screenX, screenY, pointer, button)
         }

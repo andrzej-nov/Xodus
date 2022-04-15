@@ -9,7 +9,7 @@ object DesktopLauncher {
     fun main(args: Array<String>) {
         Lwjgl3Application(Main(), Lwjgl3ApplicationConfiguration().apply {
             setTitle("Xodus")
-            setWindowedMode(960, 960)
+            setWindowedMode(900, 1200)
             setForegroundFPS(60)
             setWindowIcon("icon256.png", "icon128.png", "icon64.png", "icon32.png", "icon16.png")
         })

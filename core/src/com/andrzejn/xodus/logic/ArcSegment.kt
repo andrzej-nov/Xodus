@@ -2,7 +2,6 @@ package com.andrzejn.xodus.logic
 
 import com.andrzejn.xodus.Context
 import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.graphics.Color
 import kotlin.math.PI
 
 /**
@@ -12,12 +11,12 @@ class ArcSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
     /**
      * Arc radians size
      */
-    val radians: Float = PI.toFloat() / 2
+    private val radians: Float = PI.toFloat() / 2
 
     /**
      * Arc starting angle
      */
-    val angle: Float = when (type) {
+    private val angle: Float = when (type) {
         SegmentType.ArcLT -> -PI.toFloat() / 2
         SegmentType.ArcTR -> -PI.toFloat()
         SegmentType.ArcRB -> PI.toFloat() / 2
@@ -27,12 +26,12 @@ class ArcSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
     /**
      * Arc radius
      */
-    var radius: Float = 0f
+    private var radius: Float = 0f
 
     /**
      * Arc center. Coordinates are relative to the bottom-left corner of the tile
      */
-    val center: Vector2 = Vector2()
+    private val center: Vector2 = Vector2()
 
     /**
      * The tile square side length. Used to calculate screen positions of the segment parts.
@@ -55,7 +54,7 @@ class ArcSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
     /**
      * Radians from the arc start to the split position
      */
-    var splitRadians: Float = 0f
+    private var splitRadians: Float = 0f
 
     /**
      * The color split position, in range 0..1.
@@ -83,14 +82,16 @@ class ArcSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
         return v.set(radius, 0f).rotateRad(angle + radians * split).add(center)
     }
 
-    val c = Vector2()
+    /**
+     * Render this segment
+     */
     override fun render(ctx: Context, basePos: Vector2) {
-        c.set(center).add(basePos)
+        v.set(center).add(basePos)
         if (split > 0) {
             ctx.sd.setColor(ctx.theme.dark[color[0]])
-            ctx.sd.arc(c.x, c.y, radius, angle, splitRadians, 4f)
+            ctx.sd.arc(v.x, v.y, radius, angle, splitRadians, 4f)
         }
         ctx.sd.setColor(ctx.theme.dark[color[1]])
-        ctx.sd.arc(c.x, c.y, radius, angle + splitRadians, radians - splitRadians, 4f)
+        ctx.sd.arc(v.x, v.y, radius, angle + splitRadians, radians - splitRadians, 4f)
     }
 }

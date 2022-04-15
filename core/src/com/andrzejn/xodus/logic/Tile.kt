@@ -2,7 +2,6 @@ package com.andrzejn.xodus.logic
 
 import com.andrzejn.xodus.Context
 import com.badlogic.gdx.math.Vector2
-import space.earlygrey.shapedrawer.ShapeDrawer
 
 /**
  * Square tile with track fragments on it. Once placed to the field, it is never moved until the whole bottom line
@@ -19,12 +18,30 @@ class Tile {
      * All four tile sides always have at least one segment ending at them (may be several segments when tracks split
      * or join at thet point).
      */
-    val segments: List<TrackSegment> = randomSegments()
+    val segment: List<TrackSegment> = randomSegments()
 
     /**
-     * The tile coordinates on the field. Null for unplaced new tiles. Once put to the field, the tiles do not move.
+     * The move selectors at the tile sides. Since the tile segments never change, we can setup the selectors
+     * on tile creation.
      */
-    var coord: Coord? = null
+    val selector: Array<MoveSelector> = Array(Side.values().size) { MoveSelector(this, Side.values()[it]) }
+
+    /**
+     * The tile coordinates on the field. (-1, -1) for unplaced new tiles. Once put to the field, the tiles do not move.
+     */
+    var coord: Coord = Coord()
+
+    /**
+     * When balls are planning their movement from the tile side to another side, record its color,
+     * track step number and requirement for segment selector here
+     */
+    val intent: Array<MoveIntent> =
+        Array(Side.values().size) { i -> MoveIntent(segment.filter { it.type.sides.contains(Side.values()[i]) }) }
+
+    /**
+     * Clear move intents
+     */
+    fun clearIntents(): Unit = intent.forEach { it.clear() }
 
     private var _sideLen: Float = 0f
 
@@ -36,7 +53,7 @@ class Tile {
         get() = _sideLen
         set(value) {
             _sideLen = value
-            segments.forEach { it.sideLen = value }
+            segment.forEach { it.sideLen = value }
         }
 
     /**
@@ -46,8 +63,8 @@ class Tile {
      * or join at that side).
      */
     private fun randomSegments(): List<TrackSegment> {
-        val sidesCovered = mutableSetOf<TrackSegment.Side>()
-        return TrackSegment.SegmentType.values().also { it.shuffle() }.fold(mutableListOf()) { list, type ->
+        val sidesCovered = mutableSetOf<Side>()
+        return SegmentType.values().also { it.shuffle() }.fold(mutableListOf()) { list, type ->
             list.add(TrackSegment.of(type, this))
             sidesCovered.addAll(type.sides)
             if (sidesCovered.size == 4)
@@ -56,22 +73,33 @@ class Tile {
         }
     }
 
+    /**
+     * Render the tile segments and selectors
+     */
     fun render(ctx: Context, basePos: Vector2) {
-        segments.forEach { it.render(ctx, basePos) }
+        segment.sortedBy { it.color[0] }.forEach { it.render(ctx, basePos) }
+        //TODO render selectors
     }
 
+    /**
+     * Variable for internal calculations to reduce the GC load
+     */
     private val v = Vector2()
-    fun middleOfSide(side: TrackSegment.Side): Vector2 = when (side) {
-        TrackSegment.Side.Top -> v.set(sideLen / 2, sideLen)
-        TrackSegment.Side.Right -> v.set(sideLen, sideLen / 2)
-        TrackSegment.Side.Bottom -> v.set(sideLen / 2, 0f)
-        TrackSegment.Side.Left -> v.set(0f, sideLen / 2)
+
+    /**
+     * Coordinates of the middle of the given side. Relative to the tile bottim-left corner
+     */
+    fun middleOfSide(side: Side): Vector2 = when (side) {
+        Side.Top -> v.set(sideLen / 2, sideLen)
+        Side.Right -> v.set(sideLen, sideLen / 2)
+        Side.Bottom -> v.set(sideLen / 2, 0f)
+        Side.Left -> v.set(0f, sideLen / 2)
     }
 
     /**
      * Get initial segment to put the ball at the tile bottom, preferably LineBT
      */
     val startupBottomSegment: TrackSegment
-        get() = segments.firstOrNull { it.type == TrackSegment.SegmentType.LineBT }
-            ?: segments.first { it.type in listOf(TrackSegment.SegmentType.ArcBL, TrackSegment.SegmentType.ArcRB) }
+        get() = segment.firstOrNull { it.type == SegmentType.LineBT }
+            ?: segment.first { it.type in listOf(SegmentType.ArcBL, SegmentType.ArcRB) }
 }

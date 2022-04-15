@@ -30,9 +30,9 @@ class Ball(
     var position: Float = 0f
 
     /**
-     * The ball move direction (from which segment side the tilePosition is calculated)
+     * The ball current move direction at the tile (from which segment side the tilePosition is calculated)
      */
-    var movingFromSide: TrackSegment.Side = TrackSegment.Side.Bottom
+    var movingFromSide: Side = Side.Bottom
 
     /**
      * Clone from another ball. Used to plan the ball movement on initial track filling.
@@ -43,15 +43,23 @@ class Ball(
         movingFromSide = from.movingFromSide
     }
 
-    private val c = Vector2()
+    /**
+     * Value for internal calculations
+     */
+    private val v = Vector2()
+
+    /**
+     * Render the ball
+     */
     fun render(ctx: Context, basePos: Vector2) {
-        if (segment != null)
-            c.set(segment!!.coordinatesOf(this)).add(basePos)
+        val s = segment
+        if (s != null)
+            v.set(s.coordinatesOf(this)).add(basePos)
         else
-            c.set(tile.middleOfSide(movingFromSide)).add(basePos)
-        c.add(tile.coord!!.x * tile.sideLen, tile.coord!!.y * tile.sideLen)
-        ctx.sd.filledCircle(c, 20f, ctx.theme.dark[color])
-        ctx.sd.filledCircle(c, 15f, ctx.theme.light[color])
+            v.set(tile.middleOfSide(movingFromSide)).add(basePos)
+        v.add(tile.coord.x * tile.sideLen, tile.coord.y * tile.sideLen)
+        ctx.sd.filledCircle(v, 20f, ctx.theme.dark[color])
+        ctx.sd.filledCircle(v, 15f, ctx.theme.light[color])
     }
 
 }

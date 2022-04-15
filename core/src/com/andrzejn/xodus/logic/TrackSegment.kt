@@ -69,7 +69,6 @@ abstract class TrackSegment(
 
     fun behindSideIndex(b: Ball): Int = if (isMovingFromSegmentStart(b)) 0 else 1
 
-
     /**
      * Colors the segment by the ball
      */
@@ -92,35 +91,6 @@ abstract class TrackSegment(
         set(value) {
             _sideLen = value
         }
-
-    /**
-     * Type of the segment. Also references the sides it connects.
-     */
-    @Suppress("KDocMissingDocumentation")
-    enum class SegmentType(val sides: Array<Side>) {
-        LineBT(arrayOf(Side.Bottom, Side.Top)),
-        LineLR(arrayOf(Side.Left, Side.Right)),
-        ArcLT(arrayOf(Side.Left, Side.Top)),
-        ArcTR(arrayOf(Side.Top, Side.Right)),
-        ArcRB(arrayOf(Side.Right, Side.Bottom)),
-        ArcBL(arrayOf(Side.Bottom, Side.Left))
-    }
-
-    /**
-     * Tile side
-     */
-    @Suppress("KDocMissingDocumentation")
-    enum class Side {
-        Top, Right, Bottom, Left;
-
-        val otherSide: Side
-            get() = when (this) {
-                Top -> Bottom
-                Right -> Left
-                Bottom -> Top
-                Left -> Right
-            }
-    }
 
     /**
      * Creates TrackSegment instances
