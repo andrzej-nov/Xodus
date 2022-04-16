@@ -1,0 +1,23 @@
+### Simple project TODO list
+
+- [x] Cache ball radiuses and segment line widths (to do not multiply them by sideLen on render)
+- [x] Cache tile corner screen coordinates (to do not multiple during the render)
+- [x] Sort tile segments after planning tracks (to do not sort them during render)
+- [ ] Merge intent and selector classes together
+- [ ] Add field scrolling
+- [ ] After planning tracks, create the list of hanging selectors to render, sorted descending by the track step
+- [ ] Render the selectors
+- [ ] Hit test the selectors by the list of hanging selectors to account for overlaps
+- [ ] After selector click, set the selector and replan tracks
+- [ ] Then advance balls, kill collided ones and replan tracks
+- [ ] Add the tile-replacement moves
+- [ ] Add the "Die/Reincarnate" settings switch
+- [ ] Process reincarnation on track forks
+- [ ] End game when no balls left
+- [ ] Add the Chaos moves
+- [ ] Add the player move suggestion
+- [ ] Add the Shredder line
+- [ ] Add blots
+- [ ] Add ball eyes
+- [ ] Add animations
+- [ ] Add game save/load

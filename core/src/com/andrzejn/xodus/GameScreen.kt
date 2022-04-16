@@ -27,12 +27,17 @@ class GameScreen(
 
     private var timeStart: Long = 0
 
+    private lateinit var field: Field
+
+    /**
+     * Bottom-left corner of the board
+     */
+    private val basePos = Vector2()
+
     init {
         ctx.setTheme()
         newGame(false)
     }
-
-    lateinit var field: Field
 
     /**
      * Start new game and load saved one if any
@@ -51,7 +56,7 @@ class GameScreen(
         }
         else field = Field(ctx).also {
             it.newGame()
-            it.sideLen = sideLen
+            it.setSideLen(sideLen, basePos)
         }
     }
 
@@ -65,15 +70,10 @@ class GameScreen(
     }
 
     /**
-     * Bottom-left corner of the board
-     */
-    val basePos = Vector2()
-
-    /**
      * The squre cell side length
      */
-    var sideLen: Float = 0f
-    var fieldSquareSide: Float = 0f
+    private var sideLen: Float = 0f
+    private var fieldSquareSide: Float = 0f
 
     /**
      * Handles window resizing
@@ -88,7 +88,7 @@ class GameScreen(
             min(width.toFloat() / ctx.gs.fieldSize, height.toFloat() / (ctx.gs.fieldSize + 4))
         fieldSquareSide = sideLen * ctx.gs.fieldSize
         basePos.set((width - fieldSquareSide) / 2, (height - fieldSquareSide) / 2)
-        field.sideLen = sideLen
+        field.setSideLen(sideLen, basePos)
 
     }
 

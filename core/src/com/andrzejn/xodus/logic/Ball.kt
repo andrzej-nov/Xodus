@@ -43,6 +43,22 @@ class Ball(
         movingFromSide = from.movingFromSide
     }
 
+    private var outerRadius: Float = 0f
+    private var innerRadius: Float = 0f
+    private var _sideLen: Float = 0f
+
+    /**
+     * The tile square side length. Used to calculate screen positions of the segment parts.
+     * Changes only on the window resize.
+     */
+    var sideLen: Float
+        get() = _sideLen
+        set(value) {
+            _sideLen = value
+            outerRadius = value / 4
+            innerRadius = value / 5
+        }
+
     /**
      * Value for internal calculations
      */
@@ -51,15 +67,14 @@ class Ball(
     /**
      * Render the ball
      */
-    fun render(ctx: Context, basePos: Vector2) {
+    fun render(ctx: Context) {
         val s = segment
         if (s != null)
-            v.set(s.coordinatesOf(this)).add(basePos)
+            v.set(s.coordinatesOf(this)).add(tile.basePos)
         else
-            v.set(tile.middleOfSide(movingFromSide)).add(basePos)
-        v.add(tile.coord.x * tile.sideLen, tile.coord.y * tile.sideLen)
-        ctx.sd.filledCircle(v, 20f, ctx.theme.dark[color])
-        ctx.sd.filledCircle(v, 15f, ctx.theme.light[color])
+            v.set(tile.middleOfSide(movingFromSide))
+        ctx.sd.filledCircle(v, outerRadius, ctx.theme.dark[color])
+        ctx.sd.filledCircle(v, innerRadius, ctx.theme.light[color])
     }
 
 }

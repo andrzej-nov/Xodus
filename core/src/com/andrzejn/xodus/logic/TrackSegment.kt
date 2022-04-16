@@ -78,7 +78,7 @@ abstract class TrackSegment(
         split = ballPositionToSplit(b)
     }
 
-    abstract fun render(ctx: Context, basePos: Vector2)
+    protected var lineWidth: Float = 0f
 
     private var _sideLen: Float = 0f
 
@@ -90,7 +90,10 @@ abstract class TrackSegment(
         get() = _sideLen
         set(value) {
             _sideLen = value
+            lineWidth = value / 6
         }
+
+    abstract fun render(ctx: Context)
 
     /**
      * Creates TrackSegment instances

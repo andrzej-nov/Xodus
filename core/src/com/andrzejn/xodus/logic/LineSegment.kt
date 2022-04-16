@@ -69,10 +69,10 @@ class LineSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
     /**
      * Render this segment
      */
-    override fun render(ctx: Context, basePos: Vector2) {
-        s.set(splitPos).add(basePos)
+    override fun render(ctx: Context) {
+        s.set(splitPos).add(tile.basePos)
         if (split > 0)
-            ctx.sd.line(v.set(ends[0]).add(basePos), s, ctx.theme.dark[color[0]], 4f)
-        ctx.sd.line(s, v.set(ends[1]).add(basePos), ctx.theme.dark[color[1]], 4f)
+            ctx.sd.line(v.set(ends[0]).add(tile.basePos), s, ctx.theme.dark[color[0]], lineWidth)
+        ctx.sd.line(s, v.set(ends[1]).add(tile.basePos), ctx.theme.dark[color[1]], lineWidth)
     }
 }

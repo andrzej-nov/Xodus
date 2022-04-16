@@ -35,19 +35,24 @@ class Field(
      * The tile square side length. Used to calculate screen positions of the segment parts.
      * Changes only on the window resize.
      */
-    var sideLen: Float
+    val sideLen: Float
         get() = _sideLen
-        set(value) {
-            _sideLen = value
-            tile.flatten().filterNotNull().forEach { it.sideLen = value }
-        }
+
+    /**
+     * Update sideLen and base coordinates
+     */
+    fun setSideLen(value: Float, basePos: Vector2) {
+        _sideLen = value
+        tile.flatten().forEach { it.setSideLen(value, basePos) }
+        ball.plus(deadBall).forEach { it.sideLen = value }
+    }
 
     /**
      * Prepare field for new game.
      */
     fun newGame() {
         createInitialBalls()
-        layOutTracks()
+        planTracks()
     }
 
     /**
@@ -61,18 +66,11 @@ class Field(
         }
     }
 
-    /**
-     * Put tile to field.
-     */
-    fun putTile(x: Int, y: Int, t: Tile) {
-        tile[x][y] = t
-        t.coord = Coord(x, y)
-    }
 
     /**
      * Init/update the planned ball tracks.
      */
-    private fun layOutTracks() {
+    private fun planTracks() {
         tile.flatten().forEach { it.clearIntents() } // Clear old plans
         val movingBalls = ball.map { Ball(it) }.toMutableList()
         var step = 1
@@ -141,7 +139,9 @@ class Field(
                     s.color[0] = intent1.color
                     s.color[1] = intent1.color
                     s.split = 0f
-                } else if (intent0.color == 0 || intent0.color == intent1.color || (intent0.trackStep > intent1.trackStep && intent1.trackStep > 0)) {
+                } else if (intent0.color == 0 || intent0.color == intent1.color ||
+                    (intent0.trackStep > intent1.trackStep && intent1.trackStep > 0)
+                ) {
                     // Side 0 has no claim, or both sides claim the same color, or side 1 was here earlier
                     s.color[0] = intent1.color
                     s.color[1] = intent1.color
@@ -158,6 +158,7 @@ class Field(
                 }
             }
         }
+        tile.flatten().forEach { it.sortSegments() }
     }
 
     /**
@@ -184,7 +185,7 @@ class Field(
      */
     fun render(basePos: Vector2) {
         val v = Vector2()
-        tile.flatten().forEach { it.render(ctx, v.set(basePos).add(it.coord.x * sideLen, it.coord.y * sideLen)) }
-        ball.forEach { it.render(ctx, basePos) }
+        tile.flatten().forEach { it.render(ctx, v.set(basePos)) }
+        ball.forEach { it.render(ctx) }
     }
 }

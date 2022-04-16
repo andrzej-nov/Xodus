@@ -18,18 +18,13 @@ class Tile {
      * All four tile sides always have at least one segment ending at them (may be several segments when tracks split
      * or join at thet point).
      */
-    val segment: List<TrackSegment> = randomSegments()
+    val segment: Array<TrackSegment> = randomSegments()
 
     /**
      * The move selectors at the tile sides. Since the tile segments never change, we can setup the selectors
      * on tile creation.
      */
     val selector: Array<MoveSelector> = Array(Side.values().size) { MoveSelector(this, Side.values()[it]) }
-
-    /**
-     * The tile coordinates on the field. (-1, -1) for unplaced new tiles. Once put to the field, the tiles do not move.
-     */
-    var coord: Coord = Coord()
 
     /**
      * When balls are planning their movement from the tile side to another side, record its color,
@@ -43,18 +38,33 @@ class Tile {
      */
     fun clearIntents(): Unit = intent.forEach { it.clear() }
 
+    /**
+     * The tile coordinates on the field. (-1, -1) for unplaced new tiles. Once put to the field, the tiles do not move.
+     */
+    var coord: Coord = Coord()
+
+    /**
+     * The bottom-left tile corner in screen coordinates, to vase all content renders on it
+     */
+    val basePos: Vector2 = Vector2()
+
     private var _sideLen: Float = 0f
 
     /**
      * The tile square side length. Used to calculate screen positions of the segment parts.
      * Changes only on the window resize.
      */
-    var sideLen: Float
+    val sideLen: Float
         get() = _sideLen
-        set(value) {
-            _sideLen = value
-            segment.forEach { it.sideLen = value }
-        }
+
+    /**
+     * Update sideLen and base coordinates
+     */
+    fun setSideLen(value: Float, fieldBasePos: Vector2) {
+        _sideLen = value
+        basePos.set(coord.x * value, coord.y * value).add(fieldBasePos)
+        segment.forEach { it.sideLen = value }
+    }
 
     /**
      * Initializes the tile with random set of track segments. Onse initialized, the segments never change,
@@ -62,22 +72,30 @@ class Tile {
      * All four tile sides always have at least one segment ending at them (may be several segments when tracks split
      * or join at that side).
      */
-    private fun randomSegments(): List<TrackSegment> {
+    private fun randomSegments(): Array<TrackSegment> {
         val sidesCovered = mutableSetOf<Side>()
-        return SegmentType.values().also { it.shuffle() }.fold(mutableListOf()) { list, type ->
+        val list = mutableListOf<TrackSegment>()
+        for (type in SegmentType.values().also { it.shuffle() }) {
             list.add(TrackSegment.of(type, this))
             sidesCovered.addAll(type.sides)
             if (sidesCovered.size == 4)
-                return list
-            list
+                break
         }
+        return list.toTypedArray()
+    }
+
+    /**
+     * Sort segments by color, to render uncolored segments first
+     */
+    fun sortSegments() {
+        segment.sortBy { it.color[0] }
     }
 
     /**
      * Render the tile segments and selectors
      */
-    fun render(ctx: Context, basePos: Vector2) {
-        segment.sortedBy { it.color[0] }.forEach { it.render(ctx, basePos) }
+    fun render(ctx: Context) {
+        segment.forEach { it.render(ctx) }
         //TODO render selectors
     }
 
@@ -89,11 +107,14 @@ class Tile {
     /**
      * Coordinates of the middle of the given side. Relative to the tile bottim-left corner
      */
-    fun middleOfSide(side: Side): Vector2 = when (side) {
-        Side.Top -> v.set(sideLen / 2, sideLen)
-        Side.Right -> v.set(sideLen, sideLen / 2)
-        Side.Bottom -> v.set(sideLen / 2, 0f)
-        Side.Left -> v.set(0f, sideLen / 2)
+    fun middleOfSide(side: Side): Vector2 {
+        v.set(basePos)
+        return when (side) {
+            Side.Top -> v.add(sideLen / 2, sideLen)
+            Side.Right -> v.add(sideLen, sideLen / 2)
+            Side.Bottom -> v.add(sideLen / 2, 0f)
+            Side.Left -> v.add(0f, sideLen / 2)
+        }
     }
 
     /**
