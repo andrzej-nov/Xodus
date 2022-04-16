@@ -29,20 +29,13 @@ class Field(
      */
     private val deadBall = mutableListOf<Ball>()
 
-    private var _sideLen: Float = 0f
-
-    /**
-     * The tile square side length. Used to calculate screen positions of the segment parts.
-     * Changes only on the window resize.
-     */
-    val sideLen: Float
-        get() = _sideLen
+    private var sideLen: Float = 0f
 
     /**
      * Update sideLen and base coordinates
      */
     fun setSideLen(value: Float, basePos: Vector2) {
-        _sideLen = value
+        sideLen = value
         tile.flatten().forEach { it.setSideLen(value, basePos) }
         ball.plus(deadBall).forEach { it.sideLen = value }
     }
@@ -66,7 +59,6 @@ class Field(
         }
     }
 
-
     /**
      * Init/update the planned ball tracks.
      */
@@ -84,31 +76,29 @@ class Field(
             ballsToClear.clear()
             // Now record moving intents of remaining balls
             for (b in movingBalls) {
-                val sideIndex = b.movingFromSide.ordinal
-                val sideIntent = b.tile.intent[sideIndex]
-                if (sideIntent.color != 0) {
+                val sideIntent = b.tile.intent[b.movingFromSide.ordinal]
+                if (sideIntent.sideColor != 0) {
                     // This side is already included into some planned track. Proceed no further.
                     ballsToClear.add(b)
                     continue
                 }
-                sideIntent.color = b.color
+                sideIntent.sideColor = b.color
                 sideIntent.trackStep = step
                 if (b.segment != null) // The ball already knows its direction. Record it to the intent.
-                    sideIntent.segment = b.segment
-                else if (sideIntent.segment != null)
+                    sideIntent.intentSegment = b.segment
+                else if (sideIntent.intentSegment != null)
                 // The side already has the (only one possible) direction intent. Use it.
-                    b.segment = sideIntent.segment
-                else {
-                    val sideSelector = b.tile.selector[sideIndex]
-                    if (sideSelector.color != b.color) {
+                    b.segment = sideIntent.intentSegment
+                else { // Automatic intent settings are over. Check the selector.
+                    if (sideIntent.selectorColor != b.color) {
                         // The selector was not set or was set for another ball, but plans have changed now
-                        sideSelector.reset()
-                        sideSelector.color = b.color
+                        sideIntent.resetSelector()
+                        sideIntent.sideColor = b.color
                     }
                     // The selector at this side is either already set by the player for this ball or may have
                     // a single direction only. Use that direction, then.
-                    sideIntent.segment = sideSelector.segment
-                    b.segment = sideSelector.segment
+                    sideIntent.intentSegment = sideIntent.selectorSegment
+                    b.segment = sideIntent.selectorSegment
                 }
                 if (b.segment == null) // We don't know where to move further. Stop planning for that ball.
                     ballsToClear.add(b)
@@ -120,40 +110,39 @@ class Field(
         }
         // We have planned all intents for moving balls.
         // Clear obsolete selectors
-        tile.flatten().forEach { t ->
-            t.selector.forEachIndexed { i, s -> if (s.color != 0 && s.color != t.intent[i].color) s.reset() }
-        }
+        tile.flatten().flatMap { it.intent.toList() }
+            .filter { it.selectorColor != 0 && it.selectorColor != it.sideColor }.forEach { it.resetSelector() }
         // Now color the segments according to intents
         tile.flatten().forEach { t ->
-            t.intent.mapNotNull { it.segment }.distinct().forEach { s ->
+            t.intent.mapNotNull { it.intentSegment }.distinct().forEach { s ->
                 val intent0 = t.intent[s.type.sides[0].ordinal]
                 val intent1 = t.intent[s.type.sides[1].ordinal]
 
-                if (intent0.segment == s && intent1.segment != s) {
+                if (intent0.intentSegment == s && intent1.intentSegment != s) {
                     // Side 1 has no claim over this segment
-                    s.color[0] = intent0.color
-                    s.color[1] = intent0.color
+                    s.color[0] = intent0.sideColor
+                    s.color[1] = intent0.sideColor
                     s.split = 0f
-                } else if (intent1.segment == s && intent0.segment != s) {
+                } else if (intent1.intentSegment == s && intent0.intentSegment != s) {
                     // Side 0 has no claim over this segment
-                    s.color[0] = intent1.color
-                    s.color[1] = intent1.color
+                    s.color[0] = intent1.sideColor
+                    s.color[1] = intent1.sideColor
                     s.split = 0f
-                } else if (intent0.color == 0 || intent0.color == intent1.color ||
+                } else if (intent0.sideColor == 0 || intent0.sideColor == intent1.sideColor ||
                     (intent0.trackStep > intent1.trackStep && intent1.trackStep > 0)
                 ) {
                     // Side 0 has no claim, or both sides claim the same color, or side 1 was here earlier
-                    s.color[0] = intent1.color
-                    s.color[1] = intent1.color
+                    s.color[0] = intent1.sideColor
+                    s.color[1] = intent1.sideColor
                     s.split = 0f
-                } else if (intent1.color == 0 || (intent1.trackStep > intent0.trackStep && intent0.trackStep > 0)) {
+                } else if (intent1.sideColor == 0 || (intent1.trackStep > intent0.trackStep && intent0.trackStep > 0)) {
                     // Side 1 has no claim or side 0 was here earlier
-                    s.color[0] = intent0.color
-                    s.color[1] = intent0.color
+                    s.color[0] = intent0.sideColor
+                    s.color[1] = intent0.sideColor
                     s.split = 0f
                 } else { // Sides claim different colors and came here at the same time
-                    s.color[0] = intent0.color
-                    s.color[1] = intent1.color
+                    s.color[0] = intent0.sideColor
+                    s.color[1] = intent1.sideColor
                     s.split = 0.5f
                 }
             }
@@ -183,9 +172,8 @@ class Field(
     /**
      * Render everything on the field
      */
-    fun render(basePos: Vector2) {
-        val v = Vector2()
-        tile.flatten().forEach { it.render(ctx, v.set(basePos)) }
+    fun render() {
+        tile.flatten().forEach { it.render(ctx) }
         ball.forEach { it.render(ctx) }
     }
 }

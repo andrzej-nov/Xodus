@@ -21,22 +21,16 @@ class Tile {
     val segment: Array<TrackSegment> = randomSegments()
 
     /**
-     * The move selectors at the tile sides. Since the tile segments never change, we can setup the selectors
-     * on tile creation.
-     */
-    val selector: Array<MoveSelector> = Array(Side.values().size) { MoveSelector(this, Side.values()[it]) }
-
-    /**
      * When balls are planning their movement from the tile side to another side, record its color,
-     * track step number and requirement for segment selector here
+     * track step number and requirement for segment selector here.
+     * Also provides selector fields for the user to select the ball moving direction from this side.
      */
-    val intent: Array<MoveIntent> =
-        Array(Side.values().size) { i -> MoveIntent(segment.filter { it.type.sides.contains(Side.values()[i]) }) }
+    val intent: Array<MoveIntent> = Array(Side.values().size) { i -> MoveIntent(this, Side.values()[i]) }
 
     /**
      * Clear move intents
      */
-    fun clearIntents(): Unit = intent.forEach { it.clear() }
+    fun clearIntents(): Unit = intent.forEach { it.clearIntent() }
 
     /**
      * The tile coordinates on the field. (-1, -1) for unplaced new tiles. Once put to the field, the tiles do not move.

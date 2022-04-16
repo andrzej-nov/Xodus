@@ -166,7 +166,7 @@ class GameScreen(
                 1f
             )
         }
-        field.render(basePos)
+        field.render()
         if (ctx.batch.isDrawing) ctx.batch.end()
     }
 

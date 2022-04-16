@@ -3,7 +3,7 @@
 - [x] Cache ball radiuses and segment line widths (to do not multiply them by sideLen on render)
 - [x] Cache tile corner screen coordinates (to do not multiple during the render)
 - [x] Sort tile segments after planning tracks (to do not sort them during render)
-- [ ] Merge intent and selector classes together
+- [x] Merge intent and selector classes together
 - [ ] Add field scrolling
 - [ ] After planning tracks, create the list of hanging selectors to render, sorted descending by the track step
 - [ ] Render the selectors
