@@ -1,7 +1,6 @@
 package com.andrzejn.xodus.logic
 
 import com.andrzejn.xodus.Context
-import com.badlogic.gdx.math.Vector2
 
 /**
  * The playfield, with tiles, balls, tracks and logic
@@ -34,11 +33,19 @@ class Field(
     /**
      * Update sideLen and base coordinates
      */
-    fun setSideLen(value: Float, basePos: Vector2) {
+    fun setSideLen(value: Float, setBasePos: (Tile) -> Unit) {
         sideLen = value
-        tile.flatten().forEach { it.setSideLen(value, basePos) }
+        applyToAllTiles {
+            setBasePos(it)
+            it.setSideLen(value)
+        }
         ball.plus(deadBall).forEach { it.sideLen = value }
     }
+
+    /**
+     * Apply given lambda to all tiles
+     */
+    fun applyToAllTiles(lambda: (Tile) -> Unit): Unit = tile.flatten().forEach { lambda(it) }
 
     /**
      * Prepare field for new game.
@@ -63,7 +70,7 @@ class Field(
      * Init/update the planned ball tracks.
      */
     private fun planTracks() {
-        tile.flatten().forEach { it.clearIntents() } // Clear old plans
+        applyToAllTiles { it.clearIntents() } // Clear old plans
         val movingBalls = ball.map { Ball(it) }.toMutableList()
         var step = 1
         while (movingBalls.isNotEmpty()) {
@@ -113,7 +120,7 @@ class Field(
         tile.flatten().flatMap { it.intent.toList() }
             .filter { it.selectorColor != 0 && it.selectorColor != it.sideColor }.forEach { it.resetSelector() }
         // Now color the segments according to intents
-        tile.flatten().forEach { t ->
+        applyToAllTiles { t ->
             t.intent.mapNotNull { it.intentSegment }.distinct().forEach { s ->
                 val intent0 = t.intent[s.type.sides[0].ordinal]
                 val intent1 = t.intent[s.type.sides[1].ordinal]
@@ -147,7 +154,7 @@ class Field(
                 }
             }
         }
-        tile.flatten().forEach { it.sortSegments() }
+        applyToAllTiles { it.sortSegments() }
     }
 
     /**
@@ -173,7 +180,8 @@ class Field(
      * Render everything on the field
      */
     fun render() {
-        tile.flatten().forEach { it.render(ctx) }
+        applyToAllTiles { it.render(ctx) }
         ball.forEach { it.render(ctx) }
     }
+
 }

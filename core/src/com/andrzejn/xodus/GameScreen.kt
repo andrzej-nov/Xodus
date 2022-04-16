@@ -1,5 +1,6 @@
 package com.andrzejn.xodus
 
+import com.andrzejn.xodus.logic.Coord
 import com.andrzejn.xodus.logic.Field
 import com.badlogic.gdx.Gdx.input
 import com.badlogic.gdx.Input
@@ -25,14 +26,41 @@ class GameScreen(
      */
     private val ia = IAdapter()
 
+    /**
+     * In-game time tracker.
+     */
     private var timeStart: Long = 0
 
+    /**
+     * The game field with all logic.
+     */
     private lateinit var field: Field
 
     /**
      * Bottom-left corner of the board
      */
     private val basePos = Vector2()
+
+    /**
+     * The field cell side length
+     */
+    private var sideLen: Float = 0f
+
+    /**
+     * The whole field square size
+     */
+    private var wholeFieldSize: Float = 0f
+
+    /**
+     * Logical field coords to screen coords offset.
+     * E.g. if the field has been visually scrolled by 1 cell to the right, then scrollOffset.x = 1
+     */
+    private val scrollOffset = Coord(0, 0)
+
+    /**
+     * Variable for internal calculations to reduce the GC load
+     */
+    private val c2 = Coord()
 
     init {
         ctx.setTheme()
@@ -46,6 +74,7 @@ class GameScreen(
         ctx.score.reset()
         updateInGameDuration()
         timeStart = Calendar.getInstance().timeInMillis
+        scrollOffset.set(0, 0)
         if (loadSavedGame) try {
             val s = ctx.sav.savedGame()
             ctx.sav.loadSettingsAndScore(s)
@@ -56,8 +85,27 @@ class GameScreen(
         }
         else field = Field(ctx).also {
             it.newGame()
-            it.setSideLen(sideLen, basePos)
+            it.setSideLen(sideLen) { t -> setTileBasePos(t.coord, t.basePos) }
         }
+    }
+
+    /**
+     * Addns the last in-game duration to the total counter
+     */
+    private fun updateInGameDuration() {
+        ctx.gs.inGameDuration += Calendar.getInstance().timeInMillis - timeStart
+        timeStart = Calendar.getInstance().timeInMillis
+    }
+
+    private var thereWasAMove = false
+
+    /**
+     * Autosaves the game every 5 seconds
+     */
+    private fun autoSaveGame() {
+        if (!thereWasAMove) return
+        ctx.sav.saveGame(/*world*/)
+        thereWasAMove = false
     }
 
     /**
@@ -67,29 +115,6 @@ class GameScreen(
         super.show()
         input.inputProcessor = ia
         timeStart = Calendar.getInstance().timeInMillis
-    }
-
-    /**
-     * The squre cell side length
-     */
-    private var sideLen: Float = 0f
-    private var fieldSquareSide: Float = 0f
-
-    /**
-     * Handles window resizing
-     */
-    override fun resize(width: Int, height: Int) {
-        super.resize(width, height)
-        ctx.setCamera(width, height)
-
-        sideLen = if (width > height)
-            min(width.toFloat() / (ctx.gs.fieldSize + 4), height.toFloat() / ctx.gs.fieldSize)
-        else
-            min(width.toFloat() / ctx.gs.fieldSize, height.toFloat() / (ctx.gs.fieldSize + 4))
-        fieldSquareSide = sideLen * ctx.gs.fieldSize
-        basePos.set((width - fieldSquareSide) / 2, (height - fieldSquareSide) / 2)
-        field.setSideLen(sideLen, basePos)
-
     }
 
     /**
@@ -114,22 +139,85 @@ class GameScreen(
     }
 
     /**
-     * Addns the last in-game duration to the total counter
+     * Handles window resizing
      */
-    private fun updateInGameDuration() {
-        ctx.gs.inGameDuration += Calendar.getInstance().timeInMillis - timeStart
-        timeStart = Calendar.getInstance().timeInMillis
+    override fun resize(width: Int, height: Int) {
+        super.resize(width, height)
+        ctx.setCamera(width, height)
+
+        sideLen = if (width > height)
+            min(width.toFloat() / (ctx.gs.fieldSize + 4), height.toFloat() / ctx.gs.fieldSize)
+        else
+            min(width.toFloat() / ctx.gs.fieldSize, height.toFloat() / (ctx.gs.fieldSize + 4))
+        wholeFieldSize = sideLen * ctx.gs.fieldSize
+        basePos.set((width - wholeFieldSize) / 2, (height - wholeFieldSize) / 2)
+        field.setSideLen(sideLen) { setTileBasePos(it.coord, it.basePos) }
     }
 
-    private var thereWasAMove = false
+    /**
+     * Applies scrolling to the field
+     */
+    private fun scrollFieldBy(c: Coord) {
+        scrollOffset.add(c)
+        field.applyToAllTiles { setTileBasePos(it.coord, it.basePos) }
+    }
 
     /**
-     * Autosaves the game every 5 seconds
+     * Set the tile corner screen coordinates, considering scrolling
      */
-    private fun autoSaveGame() {
-        if (!thereWasAMove) return
-        ctx.sav.saveGame(/*world*/)
-        thereWasAMove = false
+    private fun setTileBasePos(c: Coord, basePos: Vector2) {
+        c2.set(c).fieldTileToScreenCell()
+        basePos.set(c2.x * sideLen, c2.y * sideLen).add(this.basePos)
+    }
+
+    /**
+     * Ensures the index is within (0  until fieldSize), wrapping through another side as necessary.
+     */
+    private fun clipWrap(c: Int): Int {
+        val fieldSize = ctx.gs.fieldSize
+        if (c < 0)
+            return c + (-(c + 1) / fieldSize + 1) * fieldSize
+        if (c >= fieldSize)
+            return c - (c / fieldSize) * fieldSize
+        return c
+    }
+
+    /**
+     * Update the provided coords from the cell pointed on the screen to the logical field tile indexes.
+     * Returns the converted coord for chaining.
+     */
+    private fun Coord.screenCellToFieldTile() =
+        this.set(clipWrap(this.x - scrollOffset.x), clipWrap(this.y - scrollOffset.y))
+
+    /**
+     * Update the provided coords from the logical field tile indexes to the cell pointed on the screen
+     * Returns the converted coord for chaining.
+     */
+    private fun Coord.fieldTileToScreenCell() =
+        this.set(clipWrap(this.x + scrollOffset.x), clipWrap(this.y + scrollOffset.y))
+
+    /**
+     * Variable for internal calculations, to reduce GS load
+     */
+    private val c = Coord()
+
+    /**
+     * Returns indexes of the screen cell pointed by touch/mouse. (-1, -1) of pointed otside of the field.
+     */
+    private fun Vector2.toScreenCell(): Coord {
+        if (this.x !in basePos.x..basePos.x + wholeFieldSize || this.y !in basePos.y..basePos.y + wholeFieldSize)
+            return c.unSet()
+        return c.set(((this.x - basePos.x) / sideLen).toInt(), ((this.y - basePos.y) / sideLen).toInt())
+    }
+
+    /**
+     * Returns indexes of the logical field tile pointed by touch/mouse (-1, -1) of pointed otside of the field.
+     * Uses the same internal c variable as Vector2.toScreenCell()
+     */
+    private fun Vector2.toFieldTile(): Coord {
+        if (this.toScreenCell().isNotSet())
+            return c
+        return c.screenCellToFieldTile()
     }
 
     /**
@@ -146,13 +234,13 @@ class GameScreen(
         if (!ctx.batch.isDrawing) ctx.batch.begin()
         // Draw screen background and border panels
         ctx.sd.setColor(Color(ctx.theme.gameboardBackground))
-        ctx.sd.filledRectangle(basePos.x, basePos.y, basePos.x + fieldSquareSide, basePos.y + fieldSquareSide)
+        ctx.sd.filledRectangle(basePos.x, basePos.y, basePos.x + wholeFieldSize, basePos.y + wholeFieldSize)
         ctx.sd.setColor(Color(ctx.theme.gameBorders))
         (0..ctx.gs.fieldSize).forEach { y ->
             ctx.sd.line(
                 basePos.x,
                 basePos.y + y * sideLen,
-                basePos.x + fieldSquareSide,
+                basePos.x + wholeFieldSize,
                 basePos.y + y * sideLen,
                 1f
             )
@@ -162,7 +250,7 @@ class GameScreen(
                 basePos.x + x * sideLen,
                 basePos.y,
                 basePos.x + x * sideLen,
-                basePos.y + fieldSquareSide,
+                basePos.y + wholeFieldSize,
                 1f
             )
         }
@@ -170,24 +258,29 @@ class GameScreen(
         if (ctx.batch.isDrawing) ctx.batch.end()
     }
 
-
     /**
      * Our input adapter
      */
     inner class IAdapter : InputAdapter() {
-
-        /**
-         * Handle presses/clicks
-         */
-        override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-            return super.touchDown(screenX, screenY, pointer, button)
-        }
+        private val cellDragOrigin = Coord()
 
         /**
          * Invoked when the player drags something on the screen.
          */
         override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
-            //val v = ctx.pointerPosition(input.x, input.y)
+            val v = ctx.pointerPosition(input.x, input.y)
+            val c = v.toScreenCell()
+            if (c.x >= 0) {
+                if (cellDragOrigin.isNotSet())
+                    cellDragOrigin.set(c)
+                else if (cellDragOrigin != c) {
+                    if (c.sub(cellDragOrigin).isNotZero()) {
+                        scrollFieldBy(c)
+                        cellDragOrigin.add(c)
+                    }
+                }
+            } else
+                cellDragOrigin.unSet()
             return super.touchDragged(screenX, screenY, pointer)
         }
 
@@ -195,8 +288,9 @@ class GameScreen(
          * Called when screen is untouched (mouse button released)
          */
         override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-            if (button == Input.Buttons.RIGHT)
+            if (button == Input.Buttons.RIGHT) // For temporary testing. TODO Remove it before release
                 newGame(false)
+            cellDragOrigin.unSet()
             //val v = ctx.pointerPosition(input.x, input.y)
             return super.touchUp(screenX, screenY, pointer, button)
         }

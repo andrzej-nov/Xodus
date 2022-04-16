@@ -54,9 +54,8 @@ class Tile {
     /**
      * Update sideLen and base coordinates
      */
-    fun setSideLen(value: Float, fieldBasePos: Vector2) {
+    fun setSideLen(value: Float,) {
         _sideLen = value
-        basePos.set(coord.x * value, coord.y * value).add(fieldBasePos)
         segment.forEach { it.sideLen = value }
     }
 

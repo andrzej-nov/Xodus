@@ -4,7 +4,7 @@
 - [x] Cache tile corner screen coordinates (to do not multiple during the render)
 - [x] Sort tile segments after planning tracks (to do not sort them during render)
 - [x] Merge intent and selector classes together
-- [ ] Add field scrolling
+- [x] Add field scrolling
 - [ ] After planning tracks, create the list of hanging selectors to render, sorted descending by the track step
 - [ ] Render the selectors
 - [ ] Hit test the selectors by the list of hanging selectors to account for overlaps
