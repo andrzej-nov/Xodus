@@ -293,8 +293,10 @@ class GameScreen(
         override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
             if (button == Input.Buttons.RIGHT) // For temporary testing. TODO Remove it before release
                 newGame(false)
-            cellDragOrigin.unSet()
-            //val v = ctx.pointerPosition(input.x, input.y)
+            if (cellDragOrigin.isSet())
+                cellDragOrigin.unSet()
+            val v = ctx.pointerPosition(input.x, input.y)
+            field.selectorsHitTest(v)
             return super.touchUp(screenX, screenY, pointer, button)
         }
 

@@ -121,6 +121,16 @@ class MoveIntent(
     }
 
     /**
+     * Checks if the given pointer screen coordinates match some of the selector arrows, and if yes, then set
+     * the selector segment to that direction
+     */
+    fun selectorClicked(v: Vector2): Boolean {
+        val da = directionArrows?.firstOrNull { it.second.boundingRectangle.contains(v) } ?: return false
+        selectorSegment = segments.first { it.type.sides.contains(da.first) }
+        return true
+    }
+
+    /**
      * Selector arrow coordinates, (fromSide to direction) to (triangle polygon vertices).
      * Multiply them to sideLen, plus basePos.
      */

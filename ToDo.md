@@ -7,8 +7,8 @@
 - [x] Add field scrolling
 - [x] After planning tracks, create the list of hanging selectors to render, sorted descending by the track step
 - [x] Render the selectors
-- [ ] Hit test the selectors by the list of hanging selectors to account for overlaps
-- [ ] After selector click, set the selector and replan tracks
+- [x] Hit test the selectors by the list of hanging selectors reversed to account for overlaps
+- [x] After selector click, set the selector and replan tracks
 - [ ] Then advance balls, kill collided ones and replan tracks
 - [ ] Add the tile-replacement moves
 - [ ] Add the "Die/Reincarnate" settings switch

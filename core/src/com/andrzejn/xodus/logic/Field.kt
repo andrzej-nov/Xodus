@@ -1,6 +1,7 @@
 package com.andrzejn.xodus.logic
 
 import com.andrzejn.xodus.Context
+import com.badlogic.gdx.math.Vector2
 
 /**
  * The playfield, with tiles, balls, tracks and logic
@@ -195,6 +196,22 @@ class Field(
         applyToAllTiles { it.render(ctx) }
         ball.forEach { it.render(ctx) }
         openSelector.forEach { it.render(ctx) }
+    }
+
+    /**
+     * Check if the given pointer screen coordinates match some of the active selector arrows.
+     * It there is a march, respective selector is set.
+     */
+    fun selectorsHitTest(v: Vector2) {
+        openSelector.toTypedArray().reversed().forEach {
+            if (it.selectorClicked(v)) {
+                planTracks()
+                // TODO Replace with animation start. The user should see the tracks change first, them balls movement
+                ball.forEach { b -> advanceToNextTile(b) }
+                planTracks()
+                return
+            }
+        }
     }
 
 }
