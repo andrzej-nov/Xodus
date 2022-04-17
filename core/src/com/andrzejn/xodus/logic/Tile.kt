@@ -54,9 +54,10 @@ class Tile {
     /**
      * Update sideLen and base coordinates
      */
-    fun setSideLen(value: Float,) {
+    fun setSideLen(value: Float) {
         _sideLen = value
         segment.forEach { it.sideLen = value }
+        intent.forEach { it.resetSelectorArrows() }
     }
 
     /**
@@ -66,13 +67,25 @@ class Tile {
      * or join at that side).
      */
     private fun randomSegments(): Array<TrackSegment> {
-        val sidesCovered = mutableSetOf<Side>()
         val list = mutableListOf<TrackSegment>()
+/*
+        val sidesCovered = mutableSetOf<Side>()
         for (type in SegmentType.values().also { it.shuffle() }) {
             list.add(TrackSegment.of(type, this))
             sidesCovered.addAll(type.sides)
             if (sidesCovered.size == 4)
                 break
+        }
+*/
+        val sidesCovered = mutableMapOf<Side, Int>()
+        var types = SegmentType.values().apply { shuffle() }.toList()
+        while (sidesCovered.keys.size < 4) {
+            val type = types.first()
+            list.add(TrackSegment.of(type, this))
+            type.sides.forEach { sidesCovered[it] = (sidesCovered[it] ?: 0) + 1 }
+            val sidesWithEnoughSegments = sidesCovered.filterValues { it >= 2 }.keys
+            val typeSplit = types.drop(1).partition { t -> t.sides.none { sidesWithEnoughSegments.contains(it) } }
+            types = typeSplit.first.toMutableList().apply { addAll(typeSplit.second) }
         }
         return list.toTypedArray()
     }
@@ -80,17 +93,12 @@ class Tile {
     /**
      * Sort segments by color, to render uncolored segments first
      */
-    fun sortSegments() {
-        segment.sortBy { it.color[0] }
-    }
+    fun sortSegments(): Unit = segment.sortBy { it.color[0] }
 
     /**
      * Render the tile segments and selectors
      */
-    fun render(ctx: Context) {
-        segment.forEach { it.render(ctx) }
-        //TODO render selectors
-    }
+    fun render(ctx: Context): Unit = segment.forEach { it.render(ctx) }
 
     /**
      * Variable for internal calculations to reduce the GC load

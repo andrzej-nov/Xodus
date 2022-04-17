@@ -190,12 +190,12 @@ class Context(
      */
     private val dark: Array<Color> = arrayOf(
         Color.DARK_GRAY,
-        Color(0xbf9000ff.toInt()),
+        Color(0xaf8000ff.toInt()),
         Color(0x2265bcff),
         Color(0x38761dff),
-        Color(0x56007fff),
+        Color(0x8600afff.toInt()),
         Color(0xb86706ff.toInt()),
-        Color(0x85200cff.toInt()),
+        Color(0x95200cff.toInt()),
         Color(0x286d6dff)
     )
 

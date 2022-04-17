@@ -2,6 +2,7 @@ package com.andrzejn.xodus.logic
 
 import com.andrzejn.xodus.Context
 import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.graphics.Color
 
 /**
  * Line track segment (lineTB or lineLR)
@@ -67,12 +68,31 @@ class LineSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
     private val s = Vector2()
 
     /**
+     * Render this segment, overriding color and line width
+     */
+    override fun render(ctx: Context, clr: Color, lWidth: Float) {
+        s.set(splitPos).add(tile.basePos)
+        ctx.sd.line(s, v.set(ends[1]).add(tile.basePos), clr, lWidth)
+    }
+
+
+    /**
      * Render this segment
      */
     override fun render(ctx: Context) {
         s.set(splitPos).add(tile.basePos)
         if (split > 0)
-            ctx.sd.line(v.set(ends[0]).add(tile.basePos), s, ctx.theme.dark[color[0]], lineWidth)
-        ctx.sd.line(s, v.set(ends[1]).add(tile.basePos), ctx.theme.dark[color[1]], lineWidth)
+            ctx.sd.line(
+                v.set(ends[0]).add(tile.basePos),
+                s,
+                ctx.theme.dark[color[0]],
+                if (color[0] == 0) lineWidth / 2 else lineWidth
+            )
+        ctx.sd.line(
+            s,
+            v.set(ends[1]).add(tile.basePos),
+            ctx.theme.dark[color[1]],
+            if (color[1] == 0) lineWidth / 2 else lineWidth
+        )
     }
 }

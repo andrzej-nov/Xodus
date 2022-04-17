@@ -2,6 +2,7 @@ package com.andrzejn.xodus.logic
 
 import com.andrzejn.xodus.Context
 import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.graphics.Color
 import kotlin.math.PI
 
 /**
@@ -83,15 +84,31 @@ class ArcSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
     }
 
     /**
+     * Render this segment, overriding color and line width
+     */
+    override fun render(ctx: Context, clr: Color, lWidth: Float) {
+        v.set(center).add(tile.basePos)
+        ctx.sd.setColor(clr)
+        ctx.sd.arc(v.x, v.y, radius, angle + splitRadians, radians - splitRadians, lWidth)
+    }
+
+    /**
      * Render this segment
      */
     override fun render(ctx: Context) {
         v.set(center).add(tile.basePos)
         if (split > 0) {
             ctx.sd.setColor(ctx.theme.dark[color[0]])
-            ctx.sd.arc(v.x, v.y, radius, angle, splitRadians, lineWidth)
+            ctx.sd.arc(v.x, v.y, radius, angle, splitRadians, if (color[0] == 0) lineWidth / 2 else lineWidth)
         }
         ctx.sd.setColor(ctx.theme.dark[color[1]])
-        ctx.sd.arc(v.x, v.y, radius, angle + splitRadians, radians - splitRadians, lineWidth)
+        ctx.sd.arc(
+            v.x,
+            v.y,
+            radius,
+            angle + splitRadians,
+            radians - splitRadians,
+            if (color[1] == 0) lineWidth / 2 else lineWidth
+        )
     }
 }

@@ -28,6 +28,11 @@ class Field(
      */
     private val deadBall = mutableListOf<Ball>()
 
+    /**
+     * List of selectors that the player can (and should) select.
+     */
+    private val openSelector = mutableListOf<MoveIntent>()
+
     private var sideLen: Float = 0f
 
     /**
@@ -100,7 +105,7 @@ class Field(
                     if (sideIntent.selectorColor != b.color) {
                         // The selector was not set or was set for another ball, but plans have changed now
                         sideIntent.resetSelector()
-                        sideIntent.sideColor = b.color
+                        sideIntent.selectorColor = b.color
                     }
                     // The selector at this side is either already set by the player for this ball or may have
                     // a single direction only. Use that direction, then.
@@ -110,6 +115,10 @@ class Field(
                 if (b.segment == null) // We don't know where to move further. Stop planning for that ball.
                     ballsToClear.add(b)
             }
+            // Clear all balls that entered the same segment. They will collide on nearest advance.
+            ballsToClear.addAll(movingBalls.filter { b1 ->
+                movingBalls.any { b2 -> b1 != b2 && b1.segment != null && b1.segment == b2.segment }
+            })
             movingBalls.removeAll(ballsToClear)
             ballsToClear.clear()
             movingBalls.forEach { advanceToNextTile(it) }
@@ -155,6 +164,9 @@ class Field(
             }
         }
         applyToAllTiles { it.sortSegments() }
+        openSelector.clear()
+        openSelector.addAll(tile.flatten().flatMap { it.intent.toList() }
+            .filter { it.selectorColor != 0 && it.selectorSegment == null }.sortedByDescending { it.trackStep })
     }
 
     /**
@@ -182,6 +194,7 @@ class Field(
     fun render() {
         applyToAllTiles { it.render(ctx) }
         ball.forEach { it.render(ctx) }
+        openSelector.forEach { it.render(ctx) }
     }
 
 }

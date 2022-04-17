@@ -5,8 +5,8 @@
 - [x] Sort tile segments after planning tracks (to do not sort them during render)
 - [x] Merge intent and selector classes together
 - [x] Add field scrolling
-- [ ] After planning tracks, create the list of hanging selectors to render, sorted descending by the track step
-- [ ] Render the selectors
+- [x] After planning tracks, create the list of hanging selectors to render, sorted descending by the track step
+- [x] Render the selectors
 - [ ] Hit test the selectors by the list of hanging selectors to account for overlaps
 - [ ] After selector click, set the selector and replan tracks
 - [ ] Then advance balls, kill collided ones and replan tracks

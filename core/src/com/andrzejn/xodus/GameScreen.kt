@@ -159,7 +159,10 @@ class GameScreen(
      */
     private fun scrollFieldBy(c: Coord) {
         scrollOffset.add(c)
-        field.applyToAllTiles { setTileBasePos(it.coord, it.basePos) }
+        field.applyToAllTiles { t ->
+            setTileBasePos(t.coord, t.basePos)
+            t.intent.forEach { i -> i.resetSelectorArrows() }
+        }
     }
 
     /**

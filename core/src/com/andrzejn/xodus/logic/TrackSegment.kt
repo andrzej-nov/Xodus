@@ -2,6 +2,7 @@ package com.andrzejn.xodus.logic
 
 import com.andrzejn.xodus.Context
 import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.graphics.Color
 
 /**
  * A track segment that fits into a single square tile. Always joins some two sides of the square, so it could be
@@ -93,6 +94,7 @@ abstract class TrackSegment(
             lineWidth = value / 6
         }
 
+    abstract fun render(ctx: Context, clr: Color, lWidth: Float)
     abstract fun render(ctx: Context)
 
     /**
