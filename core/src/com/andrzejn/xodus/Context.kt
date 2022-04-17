@@ -158,12 +158,12 @@ class Context(
         with(FreeTypeFontGenerator(Gdx.files.internal("ADYS-Bold_V5.ttf"))) {
             // Required for same devices like Xiaomi, where the default 1024 causes garbled fonts
             setMaxTextureSize(2048)
-            val font = generateFont(FreeTypeFontGenerator.FreeTypeFontParameter().also {
-                it.size = height
-                it.color = Color.WHITE
-                it.minFilter = Texture.TextureFilter.Linear
-                it.magFilter = Texture.TextureFilter.Linear
-                it.characters =
+            val font = generateFont(FreeTypeFontGenerator.FreeTypeFontParameter().apply {
+                size = height
+                color = Color.WHITE
+                minFilter = Texture.TextureFilter.Linear
+                magFilter = Texture.TextureFilter.Linear
+                characters =
                     "\u0000ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890\"!`?'.,;:()[]{}<>|/@\\^$€-%+=#_&~*"
             })
             dispose()
@@ -225,8 +225,8 @@ class Context(
         settingSeparator = Color.DARK_GRAY,
         gameboardBackground = Color.LIGHT_GRAY,
         creditsText = Color.NAVY,
-        scorePoints = Color(Color.CHARTREUSE).also { it.a = 0.7f },
-        scoreMoves = Color(Color.GOLD).also { it.a = 0.7f },
+        scorePoints = Color(Color.CHARTREUSE).apply { a = 0.7f },
+        scoreMoves = Color(Color.GOLD).apply { a = 0.7f },
         dark = this.light,
         light = this.dark,
         eyeColor = Color.GRAY,
@@ -241,8 +241,8 @@ class Context(
         settingSeparator = Color.LIGHT_GRAY,
         gameboardBackground = Color.BLACK,
         creditsText = Color.WHITE,
-        scorePoints = Color(Color.CHARTREUSE).also { it.a = 0.7f },
-        scoreMoves = Color(Color.GOLD).also { it.a = 0.7f },
+        scorePoints = Color(Color.CHARTREUSE).apply { a = 0.7f },
+        scoreMoves = Color(Color.GOLD).apply { a = 0.7f },
         dark = this.dark,
         light = this.light,
         eyeColor = Color.GRAY,

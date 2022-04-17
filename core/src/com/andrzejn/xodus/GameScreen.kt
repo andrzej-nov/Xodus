@@ -83,9 +83,9 @@ class GameScreen(
             // Something wrong. Just recreate new World and start new game
             //world = World(ctx)
         }
-        else field = Field(ctx).also {
-            it.newGame()
-            it.setSideLen(sideLen) { t -> setTileBasePos(t.coord, t.basePos) }
+        else field = Field(ctx).apply {
+            newGame()
+            setSideLen(sideLen) { t -> setTileBasePos(t.coord, t.basePos) }
         }
     }
 

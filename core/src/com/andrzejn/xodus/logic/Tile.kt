@@ -68,15 +68,6 @@ class Tile {
      */
     private fun randomSegments(): Array<TrackSegment> {
         val list = mutableListOf<TrackSegment>()
-/*
-        val sidesCovered = mutableSetOf<Side>()
-        for (type in SegmentType.values().also { it.shuffle() }) {
-            list.add(TrackSegment.of(type, this))
-            sidesCovered.addAll(type.sides)
-            if (sidesCovered.size == 4)
-                break
-        }
-*/
         val sidesCovered = mutableMapOf<Side, Int>()
         var types = SegmentType.values().apply { shuffle() }.toList()
         while (sidesCovered.keys.size < 4) {

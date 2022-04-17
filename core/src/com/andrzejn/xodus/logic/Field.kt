@@ -15,7 +15,7 @@ class Field(
      * The field of tiles
      */
     private val tile: Array<Array<Tile>> =
-        Array(ctx.gs.fieldSize) { x -> Array(ctx.gs.fieldSize) { y -> Tile().also { it.coord.set(x, y) } } }
+        Array(ctx.gs.fieldSize) { x -> Array(ctx.gs.fieldSize) { y -> Tile().apply { coord.set(x, y) } } }
 
     /**
      * Active balls on the field
