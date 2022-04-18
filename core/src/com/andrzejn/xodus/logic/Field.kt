@@ -34,6 +34,12 @@ class Field(
      */
     private val openSelector = mutableListOf<MoveIntent>()
 
+    /**
+     * The list of selector colors already clicked on this move.
+     * Cleared after placing a tile before advancing the bakk.
+     */
+    private val clickedSelectorColors = mutableListOf<Int>()
+
     private var sideLen: Float = 0f
 
     /**
@@ -170,7 +176,9 @@ class Field(
         applyToAllTiles { it.sortSegments() }
         openSelector.clear()
         openSelector.addAll(tile.flatten().flatMap { it.intent.toList() }
-            .filter { it.selectorColor != 0 && it.selectorSegment == null }.sortedByDescending { it.trackStep })
+            .filter {
+                it.selectorColor != 0 && it.selectorSegment == null && it.selectorColor !in clickedSelectorColors
+            }.sortedByDescending { it.trackStep })
     }
 
     /**
@@ -213,9 +221,7 @@ class Field(
     fun selectorsHitTest(v: Vector2) {
         openSelector.toTypedArray().reversed().forEach {
             if (it.selectorClicked(v)) {
-                planTracks()
-                // TODO Change following 2 lines to ball advance only after the tile placement
-                ball.forEach { b -> advanceToNextTile(b) }
+                clickedSelectorColors.add(it.selectorColor)
                 planTracks()
                 return
             }

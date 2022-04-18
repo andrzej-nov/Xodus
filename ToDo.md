@@ -1,24 +1,19 @@
 ### Simple project TODO list
 
-- [x] Cache ball radiuses and segment line widths (to do not multiply them by sideLen on render)
-- [x] Cache tile corner screen coordinates (to do not multiple during the render)
-- [x] Sort tile segments after planning tracks (to do not sort them during render)
-- [x] Merge intent and selector classes together
-- [x] Add field scrolling
-- [x] After planning tracks, create the list of hanging selectors to render, sorted descending by the track step
-- [x] Render the selectors
-- [x] Hit test the selectors by the list of hanging selectors reversed to account for overlaps
-- [x] After selector click, set the selector and replan tracks
-- [ ] Once a ball selector is clicked, do not show selectors for that ball until a tile is placed to the field
+- [x] Once a ball selector is clicked, do not show selectors for that ball until a tile is placed to the field
 - [ ] Add the tile-replacement moves
-- [ ] After plcaing a tile, advance balls, kill collided ones and replan tracks
+- [ ] After placing a tile, advance balls, kill collided ones and replan tracks
+  ball.forEach { b -> advanceToNextTile(b) }
+  planTracks()
 - [ ] Add the "Die/Reincarnate" settings switch
 - [ ] Process reincarnation on track forks
 - [ ] End game when no balls left
 - [ ] Add the Chaos tile moves (0, 1, 2, controlled by settings). Chaos adds its tiles after the player tile, and only then balls advance.
 - [ ] Add the Shredder line (controlled by settings)
 - [ ] Add the player move suggestion
+- [ ] Show "magnifier glass" when pressing a selector, to easier selector picking
 - [ ] Add blots
 - [ ] Add ball eyes
 - [ ] Add animations
 - [ ] Add game save/load
+- [ ] Add settings to the Home screen
