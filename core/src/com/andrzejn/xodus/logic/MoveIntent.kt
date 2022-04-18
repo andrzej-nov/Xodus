@@ -20,7 +20,7 @@ class MoveIntent(
     /**
      * Planned (intended) track color
      */
-    var sideColor: Int = 0
+    var intentSideColor: Int = 0
 
     /**
      * Sequential number of the segment in respective planned ball track, to determine which ball comes first
@@ -60,7 +60,7 @@ class MoveIntent(
      * Clear the intent (before the intents planning)
      */
     fun clearIntent() {
-        sideColor = 0
+        intentSideColor = 0
         trackStep = 0
         intentSegment = defaultSegment
     }

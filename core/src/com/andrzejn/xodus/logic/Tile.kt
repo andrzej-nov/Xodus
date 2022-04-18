@@ -109,6 +109,8 @@ class Tile {
         }
     }
 
+    fun clearSegmentColors() = segment.forEach { it.reset() }
+
     /**
      * Get initial segment to put the ball at the tile bottom, preferably LineBT
      */

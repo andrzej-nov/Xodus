@@ -9,14 +9,15 @@
 - [x] Render the selectors
 - [x] Hit test the selectors by the list of hanging selectors reversed to account for overlaps
 - [x] After selector click, set the selector and replan tracks
-- [ ] Then advance balls, kill collided ones and replan tracks
+- [ ] Once a ball selector is clicked, do not show selectors for that ball until a tile is placed to the field
 - [ ] Add the tile-replacement moves
+- [ ] After plcaing a tile, advance balls, kill collided ones and replan tracks
 - [ ] Add the "Die/Reincarnate" settings switch
 - [ ] Process reincarnation on track forks
 - [ ] End game when no balls left
-- [ ] Add the Chaos moves
+- [ ] Add the Chaos tile moves (0, 1, 2, controlled by settings). Chaos adds its tiles after the player tile, and only then balls advance.
+- [ ] Add the Shredder line (controlled by settings)
 - [ ] Add the player move suggestion
-- [ ] Add the Shredder line
 - [ ] Add blots
 - [ ] Add ball eyes
 - [ ] Add animations

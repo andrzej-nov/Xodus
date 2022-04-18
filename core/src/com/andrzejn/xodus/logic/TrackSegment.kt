@@ -96,6 +96,11 @@ abstract class TrackSegment(
 
     abstract fun render(ctx: Context, clr: Color, lWidth: Float)
     abstract fun render(ctx: Context)
+    fun reset() {
+        color[0] = 0
+        color[1] = 0
+        split = 0f
+    }
 
     /**
      * Creates TrackSegment instances

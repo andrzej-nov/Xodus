@@ -174,30 +174,18 @@ class GameScreen(
     }
 
     /**
-     * Ensures the index is within (0  until fieldSize), wrapping through another side as necessary.
-     */
-    private fun clipWrap(c: Int): Int {
-        val fieldSize = ctx.gs.fieldSize
-        if (c < 0)
-            return c + (-(c + 1) / fieldSize + 1) * fieldSize
-        if (c >= fieldSize)
-            return c - (c / fieldSize) * fieldSize
-        return c
-    }
-
-    /**
      * Update the provided coords from the cell pointed on the screen to the logical field tile indexes.
      * Returns the converted coord for chaining.
      */
     private fun Coord.screenCellToFieldTile() =
-        this.set(clipWrap(this.x - scrollOffset.x), clipWrap(this.y - scrollOffset.y))
+        this.set(ctx.clipWrap(this.x - scrollOffset.x), ctx.clipWrap(this.y - scrollOffset.y))
 
     /**
      * Update the provided coords from the logical field tile indexes to the cell pointed on the screen
      * Returns the converted coord for chaining.
      */
     private fun Coord.fieldTileToScreenCell() =
-        this.set(clipWrap(this.x + scrollOffset.x), clipWrap(this.y + scrollOffset.y))
+        this.set(ctx.clipWrap(this.x + scrollOffset.x), ctx.clipWrap(this.y + scrollOffset.y))
 
     /**
      * Variable for internal calculations, to reduce GS load

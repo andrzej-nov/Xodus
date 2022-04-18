@@ -99,6 +99,18 @@ class Context(
     }
 
     /**
+     * Ensures the index is within (0  until fieldSize), wrapping through another side as necessary.
+     */
+    fun clipWrap(c: Int): Int {
+        val fieldSize = gs.fieldSize
+        if (c < 0)
+            return c + (-(c + 1) / fieldSize + 1) * fieldSize
+        if (c >= fieldSize)
+            return c - (c / fieldSize) * fieldSize
+        return c
+    }
+
+    /**
      * Initialize the camera, batch and drawer that draw screens
      */
     fun initBatch() {
