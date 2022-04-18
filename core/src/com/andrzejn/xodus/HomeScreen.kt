@@ -46,7 +46,7 @@ class HomeScreen(
     private val logo = Sprite(ctx.logo)
     private val play = Sprite(ctx.play)
     private val exit = Sprite(ctx.exit)
-    private val options = Sprite(ctx.options)
+    private val info = Sprite(ctx.info)
     private val gear = Sprite(ctx.gear)
     private val darktheme = Sprite(ctx.darktheme)
     private val lighttheme = Sprite(ctx.lighttheme)
@@ -109,10 +109,10 @@ class HomeScreen(
             11 * gridX - exit.width / 2 + baseX,
             (gridY - exit.height) / 2
         )
-        ctx.fitToRect(options, 2 * gridX * 0.8f, gridY * 0.8f)
-        options.setPosition(
-            gridX - options.width / 2 + baseX,
-            (gridY - options.height) / 2
+        ctx.fitToRect(info, 2 * gridX * 0.8f, gridY * 0.8f)
+        info.setPosition(
+            gridX - info.width / 2 + baseX,
+            (gridY - info.height) / 2
         )
     }
 
@@ -161,7 +161,7 @@ class HomeScreen(
         gear.draw(ctx.batch)
         play.draw(ctx.batch)
         exit.draw(ctx.batch)
-        options.draw(ctx.batch)
+        info.draw(ctx.batch)
         ctx.batch.end()
     }
 

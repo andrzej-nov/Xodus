@@ -49,7 +49,7 @@ class CreditsScreen(
     private val icontelegram = Sprite(ctx.icontelegram)
     private val icongithub = Sprite(ctx.icongithub)
     private val exit = Sprite(ctx.exit)
-    private val home = Sprite(ctx.home)
+    private val settings = Sprite(ctx.settings)
 
     /**
      * Invoked on each screen resize
@@ -84,10 +84,10 @@ class CreditsScreen(
             7 * gridX - exit.width / 2,
             (gridY - exit.height) / 2
         )
-        ctx.fitToRect(home, gridX * 0.9f, gridY * 0.9f)
-        home.setPosition(
-            gridX - home.width / 2,
-            (gridY - home.height) / 2
+        ctx.fitToRect(settings, gridX * 0.9f, gridY * 0.9f)
+        settings.setPosition(
+            gridX - settings.width / 2,
+            (gridY - settings.height) / 2
         )
         font.dispose()
         font = ctx.createFont((icongmail.height * 0.5).toInt())
@@ -127,7 +127,7 @@ class CreditsScreen(
         icongmail.draw(ctx.batch)
         icontelegram.draw(ctx.batch)
         icongithub.draw(ctx.batch)
-        home.draw(ctx.batch)
+        settings.draw(ctx.batch)
         exit.draw(ctx.batch)
         fcText.draw(ctx.batch)
         fcTime.draw(ctx.batch)

@@ -149,11 +149,10 @@ class Context(
     private fun texture(regionName: String): TextureRegion = atlas.asset.findRegion(regionName)
 
     private val white: TextureRegion get() = texture("white")
-    val logo: TextureRegion get() = texture("logo")
-    val home: TextureRegion get() = texture("home")
+    val settings: TextureRegion get() = texture("settings")
     val play: TextureRegion get() = texture("play")
-    val exit: TextureRegion get() = texture("poweroff")
-    val options: TextureRegion get() = texture("options")
+    val exit: TextureRegion get() = texture("exit")
+    val info: TextureRegion get() = texture("info")
     val help: TextureRegion get() = texture("help")
     val gear: TextureRegion get() = texture("gear")
     val darktheme: TextureRegion get() = texture("darktheme")
@@ -161,6 +160,8 @@ class Context(
     val icongmail: TextureRegion get() = texture("icongmail")
     val icontelegram: TextureRegion get() = texture("icontelegram")
     val icongithub: TextureRegion get() = texture("icongithub")
+    val chaos: TextureRegion get() = texture("chaos")
+    val logo: TextureRegion get() = texture("logo")
 
     /**
      * Create a bitmap font with given size, base color etc. from the provided TrueType font.

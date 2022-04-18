@@ -2,12 +2,15 @@ package com.andrzejn.xodus
 
 import com.andrzejn.xodus.logic.Coord
 import com.andrzejn.xodus.logic.Field
+import com.badlogic.gdx.Gdx.graphics
 import com.badlogic.gdx.Gdx.input
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.math.Vector2
 import ktx.app.KtxScreen
+import ktx.app.clearScreen
 import java.util.*
 import kotlin.math.min
 
@@ -42,6 +45,16 @@ class GameScreen(
     private val basePos = Vector2()
 
     /**
+     * Center point of the chaos sprite placement
+     */
+    private val chaosPos = Vector2()
+
+    /**
+     * Center point of the new tile placement
+     */
+    private val newTilePos = Vector2()
+
+    /**
      * The field cell side length
      */
     private var sideLen: Float = 0f
@@ -61,6 +74,9 @@ class GameScreen(
      * Variable for internal calculations to reduce the GC load
      */
     private val c2 = Coord()
+
+    private val chaos = Sprite(ctx.chaos)
+    private val logo = Sprite(ctx.logo).apply { setAlpha(0.5f) }
 
     init {
         ctx.setTheme()
@@ -150,8 +166,20 @@ class GameScreen(
         else
             min(width.toFloat() / ctx.gs.fieldSize, height.toFloat() / (ctx.gs.fieldSize + 4))
         wholeFieldSize = sideLen * ctx.gs.fieldSize
+        if (width > height) {
+            newTilePos.set((width + wholeFieldSize) / 2f + (width - wholeFieldSize) / 4f, height / 2f)
+            chaosPos.set((width - wholeFieldSize) / 2f - (width - wholeFieldSize) / 4f, height / 2f)
+            ctx.fitToRect(logo, (width - wholeFieldSize) / 2f, height / 2f - sideLen)
+        } else {
+            newTilePos.set(width / 2f, (height - wholeFieldSize) / 2f - (height - wholeFieldSize) / 4f)
+            chaosPos.set(width / 2f, (height + wholeFieldSize) / 2f + (height - wholeFieldSize) / 4f)
+            ctx.fitToRect(logo, width / 2f - sideLen, (height - wholeFieldSize) / 2f)
+        }
         basePos.set((width - wholeFieldSize) / 2, (height - wholeFieldSize) / 2)
         field.setSideLen(sideLen) { setTileBasePos(it.coord, it.basePos) }
+        chaos.setSize(sideLen * 1.8f, sideLen * 1.8f)
+        chaos.setCenter(chaosPos.x, chaosPos.y)
+        logo.setPosition(0f, height - logo.height)
     }
 
     /**
@@ -222,10 +250,13 @@ class GameScreen(
             // There should be no exceptions here. But if they are, simply restart the game.
             newGame(false)
         }
+        with(ctx.theme.screenBackground) {
+            clearScreen(r, g, b, a, true)
+        }
         if (!ctx.batch.isDrawing) ctx.batch.begin()
         // Draw screen background and border panels
         ctx.sd.setColor(Color(ctx.theme.gameboardBackground))
-        ctx.sd.filledRectangle(basePos.x, basePos.y, basePos.x + wholeFieldSize, basePos.y + wholeFieldSize)
+        ctx.sd.filledRectangle(basePos.x, basePos.y, wholeFieldSize, wholeFieldSize)
         ctx.sd.setColor(Color(ctx.theme.gameBorders))
         (0..ctx.gs.fieldSize).forEach { y ->
             ctx.sd.line(
@@ -246,6 +277,12 @@ class GameScreen(
             )
         }
         field.render()
+        logo.draw(ctx.batch)
+        chaos.draw(ctx.batch)
+        ctx.sd.setColor(ctx.theme.gameboardBackground)
+        ctx.sd.filledCircle(newTilePos, sideLen * 0.9f)
+        ctx.sd.setColor(ctx.theme.settingSeparator)
+        ctx.sd.circle(newTilePos.x, newTilePos.y, sideLen * 0.9f, 1f)
         if (ctx.batch.isDrawing) ctx.batch.end()
     }
 
