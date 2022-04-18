@@ -228,7 +228,8 @@ class Context(
         val dark: Array<Color>,
         val eyeColor: Color,
         val gameBorders: Color,
-        val ballColor: Color
+        val ballColor: Color,
+        val cellHilight: Color
     )
 
     private val lt: Theme = Theme(
@@ -240,11 +241,12 @@ class Context(
         creditsText = Color.NAVY,
         scorePoints = Color(Color.CHARTREUSE).apply { a = 0.7f },
         scoreMoves = Color(Color.GOLD).apply { a = 0.7f },
-        dark = this.light,
         light = this.dark,
+        dark = this.light,
         eyeColor = Color.GRAY,
         gameBorders = Color.GRAY,
-        ballColor = Color.WHITE
+        ballColor = Color.WHITE,
+        cellHilight = Color.DARK_GRAY
     )
 
     private val dk: Theme = Theme(
@@ -256,11 +258,12 @@ class Context(
         creditsText = Color.WHITE,
         scorePoints = Color(Color.CHARTREUSE).apply { a = 0.7f },
         scoreMoves = Color(Color.GOLD).apply { a = 0.7f },
-        dark = this.dark,
         light = this.light,
+        dark = this.dark,
         eyeColor = Color.GRAY,
         gameBorders = Color.DARK_GRAY,
-        ballColor = Color.GRAY
+        ballColor = Color.GRAY,
+        cellHilight = Color.LIGHT_GRAY
     )
 
     /**

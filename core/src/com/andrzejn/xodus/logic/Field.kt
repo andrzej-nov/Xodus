@@ -216,16 +216,34 @@ class Field(
 
     /**
      * Check if the given pointer screen coordinates match some of the active selector arrows.
-     * It there is a march, respective selector is set.
+     * It there is a match, respective selector is set and the track extended.
+     * Returns true if there are no more available selectors.
      */
-    fun selectorsHitTest(v: Vector2) {
+    fun selectorsHitTest(v: Vector2): Boolean {
         openSelector.toTypedArray().reversed().forEach {
             if (it.selectorClicked(v)) {
                 clickedSelectorColors.add(it.selectorColor)
                 planTracks()
-                return
+                return openSelector.size == 0
             }
         }
+        return openSelector.size == 0
+    }
+
+    /**
+     * Put new tile to the specified field cell. Updates everything for next move
+     */
+    fun putNewTile(newTile: Tile, coord: Coord) {
+        val oldTile = tile[coord.x][coord.y]
+        newTile.coord.set(coord)
+        newTile.basePos.set(oldTile.basePos)
+        tile[coord.x][coord.y] = newTile
+        ball.filter { it.tile == oldTile }.forEach {
+            it.tile = newTile
+            it.segment = null
+        }
+        clickedSelectorColors.clear()
+        planTracks()
     }
 
 }

@@ -103,6 +103,17 @@ abstract class TrackSegment(
     }
 
     /**
+     * Ensures that non-colored segments are drawn in thinner lines
+     */
+    protected fun colorBasedLineWidth(color: Int): Float = if (color == 0) lineWidth / 2 else lineWidth
+
+    /**
+     * Ensures that unplaced new tile is drawn in light color
+     */
+    protected fun colorFor(color: Int, ctx: Context) =
+        if (color == 0 && tile.coord.isNotSet()) ctx.theme.light[0] else ctx.theme.dark[color]
+
+    /**
      * Creates TrackSegment instances
      */
     companion object Factory {

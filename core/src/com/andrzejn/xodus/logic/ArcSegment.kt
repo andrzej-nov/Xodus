@@ -98,17 +98,18 @@ class ArcSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
     override fun render(ctx: Context) {
         v.set(center).add(tile.basePos)
         if (split > 0) {
-            ctx.sd.setColor(ctx.theme.dark[color[0]])
-            ctx.sd.arc(v.x, v.y, radius, angle, splitRadians, if (color[0] == 0) lineWidth / 2 else lineWidth)
+            ctx.sd.setColor(colorFor(color[0], ctx))
+            ctx.sd.arc(v.x, v.y, radius, angle, splitRadians, colorBasedLineWidth(color[0]))
         }
-        ctx.sd.setColor(ctx.theme.dark[color[1]])
+        ctx.sd.setColor(colorFor(color[1], ctx))
         ctx.sd.arc(
             v.x,
             v.y,
             radius,
             angle + splitRadians,
             radians - splitRadians,
-            if (color[1] == 0) lineWidth / 2 else lineWidth
+            colorBasedLineWidth(color[1])
         )
     }
+
 }

@@ -2,11 +2,10 @@ package com.andrzejn.xodus
 
 import com.andrzejn.xodus.logic.Coord
 import com.andrzejn.xodus.logic.Field
-import com.badlogic.gdx.Gdx.graphics
+import com.andrzejn.xodus.logic.Tile
 import com.badlogic.gdx.Gdx.input
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
-import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.math.Vector2
 import ktx.app.KtxScreen
@@ -71,9 +70,28 @@ class GameScreen(
     private val scrollOffset = Coord(0, 0)
 
     /**
-     * Variable for internal calculations to reduce the GC load
+     * Variables for internal calculations to reduce the GC load
      */
+    private val v = Vector2()
+    private val c = Coord()
     private val c2 = Coord()
+
+    /**
+     * It is set to the screen pointer coordinates when dragging
+     */
+    private val dragPos = Vector2()
+    private val dragStart = Vector2()
+
+    private enum class DragSource {
+        None, Board, NewTile
+    }
+
+    private var dragFrom = DragSource.None
+
+    /**
+     * New tile to show at the newTilePos and put to field on click
+     */
+    private var newTile: Tile? = null
 
     private val chaos = Sprite(ctx.chaos)
     private val logo = Sprite(ctx.logo).apply { setAlpha(0.5f) }
@@ -102,6 +120,16 @@ class GameScreen(
         else field = Field(ctx).apply {
             newGame()
             setSideLen(sideLen) { t -> setTileBasePos(t.coord, t.basePos) }
+        }
+    }
+
+    /**
+     * Creates new tile and prepares it to show at the newTilePos
+     */
+    private fun createNewTile() {
+        newTile = Tile().apply {
+            setSideLen(this@GameScreen.sideLen)
+            basePos.set(newTilePos).sub(sideLen / 2f, sideLen / 2f)
         }
     }
 
@@ -177,6 +205,7 @@ class GameScreen(
         }
         basePos.set((width - wholeFieldSize) / 2, (height - wholeFieldSize) / 2)
         field.setSideLen(sideLen) { setTileBasePos(it.coord, it.basePos) }
+        newTile?.setSideLen(sideLen)
         chaos.setSize(sideLen * 1.8f, sideLen * 1.8f)
         chaos.setCenter(chaosPos.x, chaosPos.y)
         logo.setPosition(0f, height - logo.height)
@@ -216,12 +245,15 @@ class GameScreen(
         this.set(ctx.clipWrap(this.x + scrollOffset.x), ctx.clipWrap(this.y + scrollOffset.y))
 
     /**
-     * Variable for internal calculations, to reduce GS load
+     * Converts screen cell indexes to the bottom-left screen coordinates to draw the rectangle
+     * Sets private var v to the same value
      */
-    private val c = Coord()
+    private fun Coord.toScreenCellCorner(): Vector2 =
+        v.set(this.x.toFloat(), this.y.toFloat()).scl(sideLen).add(basePos)
 
     /**
      * Returns indexes of the screen cell pointed by touch/mouse. (-1, -1) of pointed otside of the field.
+     * Sets private var c to the same return value
      */
     private fun Vector2.toScreenCell(): Coord {
         if (this.x !in basePos.x..basePos.x + wholeFieldSize || this.y !in basePos.y..basePos.y + wholeFieldSize)
@@ -231,7 +263,8 @@ class GameScreen(
 
     /**
      * Returns indexes of the logical field tile pointed by touch/mouse (-1, -1) of pointed otside of the field.
-     * Uses the same internal c variable as Vector2.toScreenCell()
+     * Uses the same private var c as Vector2.toScreenCell()
+     * Sets private var c to the same return value
      */
     private fun Vector2.toFieldTile(): Coord {
         if (this.toScreenCell().isNotSet())
@@ -254,10 +287,32 @@ class GameScreen(
             clearScreen(r, g, b, a, true)
         }
         if (!ctx.batch.isDrawing) ctx.batch.begin()
-        // Draw screen background and border panels
-        ctx.sd.setColor(Color(ctx.theme.gameboardBackground))
+        ctx.sd.setColor(ctx.theme.gameboardBackground)
         ctx.sd.filledRectangle(basePos.x, basePos.y, wholeFieldSize, wholeFieldSize)
-        ctx.sd.setColor(Color(ctx.theme.gameBorders))
+        ctx.pointerPosition(input.x, input.y).toScreenCell().toScreenCellCorner()
+        if (c.isSet())
+            ctx.sd.filledRectangle(v.x, v.y, sideLen, sideLen, ctx.theme.cellHilight)
+        // Draw screen background and border panels
+        renderFieldGrid()
+        field.render()
+        logo.draw(ctx.batch)
+        chaos.draw(ctx.batch)
+        ctx.sd.setColor(ctx.theme.gameboardBackground)
+        ctx.sd.filledCircle(newTilePos, sideLen * 0.9f)
+        ctx.sd.setColor(ctx.theme.settingSeparator)
+        ctx.sd.circle(newTilePos.x, newTilePos.y, sideLen * 0.9f, 1f)
+        val nT = newTile
+        if (nT != null) with(nT) {
+            basePos.set(if (dragFrom == DragSource.NewTile) dragPos else newTilePos).sub(sideLen / 2, sideLen / 2)
+            ctx.sd.filledRectangle(basePos.x, basePos.y, sideLen, sideLen, ctx.theme.gameboardBackground)
+            ctx.sd.rectangle(basePos.x, basePos.y, sideLen, sideLen, ctx.theme.gameBorders, 1f)
+            render(ctx)
+        }
+        if (ctx.batch.isDrawing) ctx.batch.end()
+    }
+
+    private fun renderFieldGrid() {
+        ctx.sd.setColor(ctx.theme.gameBorders)
         (0..ctx.gs.fieldSize).forEach { y ->
             ctx.sd.line(
                 basePos.x,
@@ -276,14 +331,20 @@ class GameScreen(
                 1f
             )
         }
-        field.render()
-        logo.draw(ctx.batch)
-        chaos.draw(ctx.batch)
-        ctx.sd.setColor(ctx.theme.gameboardBackground)
-        ctx.sd.filledCircle(newTilePos, sideLen * 0.9f)
-        ctx.sd.setColor(ctx.theme.settingSeparator)
-        ctx.sd.circle(newTilePos.x, newTilePos.y, sideLen * 0.9f, 1f)
-        if (ctx.batch.isDrawing) ctx.batch.end()
+    }
+
+    /**
+     * Set the selector or put the new tile into place, depending on current state
+     */
+    private fun selectorOrNewTileAt(v: Vector2) {
+        val nT = newTile
+        if (nT == null) {
+            if (field.selectorsHitTest(v))
+                createNewTile()
+        } else {
+            field.putNewTile(nT, v.toFieldTile())
+            newTile = null
+        }
     }
 
     /**
@@ -296,19 +357,28 @@ class GameScreen(
          * Invoked when the player drags something on the screen.
          */
         override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
-            val v = ctx.pointerPosition(input.x, input.y)
-            val c = v.toScreenCell()
-            if (c.x >= 0) {
-                if (cellDragOrigin.isNotSet())
-                    cellDragOrigin.set(c)
-                else if (cellDragOrigin != c) {
-                    if (c.sub(cellDragOrigin).isNotZero()) {
-                        scrollFieldBy(c)
-                        cellDragOrigin.add(c)
+            dragPos.set(ctx.pointerPosition(screenX, screenY))
+            val c = dragPos.toScreenCell()
+            if (dragFrom == DragSource.None) {
+                dragStart.set(dragPos)
+                if (c.isSet())
+                    dragFrom = DragSource.Board
+                else if (dragPos.dst(newTilePos) < sideLen)
+                    dragFrom = DragSource.NewTile
+            }
+            if (dragFrom == DragSource.Board) {
+                if (c.isSet()) {
+                    if (cellDragOrigin.isNotSet())
+                        cellDragOrigin.set(c)
+                    else if (cellDragOrigin != c) {
+                        if (c.sub(cellDragOrigin).isNotZero()) {
+                            scrollFieldBy(c)
+                            cellDragOrigin.add(c)
+                        }
                     }
-                }
-            } else
-                cellDragOrigin.unSet()
+                } else
+                    cellDragOrigin.unSet()
+            }
             return super.touchDragged(screenX, screenY, pointer)
         }
 
@@ -318,12 +388,16 @@ class GameScreen(
         override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
             if (button == Input.Buttons.RIGHT) // For temporary testing. TODO Remove it before release
                 newGame(false)
-            if (cellDragOrigin.isSet())
-                cellDragOrigin.unSet()
-            val v = ctx.pointerPosition(input.x, input.y)
-            field.selectorsHitTest(v)
+            if (dragFrom == DragSource.None || dragFrom == DragSource.NewTile || dragStart.dst(dragPos) < 4)
+            // The last condition is a safeguard against clicks with minor pointer slides that are erroneously
+            // interpreted as drags
+                selectorOrNewTileAt(ctx.pointerPosition(screenX, screenY))
+            cellDragOrigin.unSet()
+            dragPos.set(Vector2.Zero)
+            dragFrom = DragSource.None
             return super.touchUp(screenX, screenY, pointer, button)
         }
 
     }
+
 }

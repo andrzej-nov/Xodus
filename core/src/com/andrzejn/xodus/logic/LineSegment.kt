@@ -85,14 +85,14 @@ class LineSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
             ctx.sd.line(
                 v.set(ends[0]).add(tile.basePos),
                 s,
-                ctx.theme.dark[color[0]],
-                if (color[0] == 0) lineWidth / 2 else lineWidth
+                colorFor(color[0], ctx),
+                colorBasedLineWidth(color[0])
             )
         ctx.sd.line(
             s,
             v.set(ends[1]).add(tile.basePos),
-            ctx.theme.dark[color[1]],
-            if (color[1] == 0) lineWidth / 2 else lineWidth
+            colorFor(color[1], ctx),
+            colorBasedLineWidth(color[1])
         )
     }
 }
