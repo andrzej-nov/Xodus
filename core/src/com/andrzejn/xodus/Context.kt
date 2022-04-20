@@ -67,7 +67,15 @@ class Context(
     val sav: SaveGame = SaveGame(this)
 
     init { // Need to specify which objects' properties will be used for animations
-        Tween.registerAccessor(Sprite::class.java, SpriteAccessor())
+        Tween.registerAccessor(FloatingTile::class.java, FloatingTileAccessor())
+    }
+
+    /**
+     * Not clearly documented but working method to check whether some transition animations are in progress
+     * (and ignore user input until animations complete, for example)
+     */
+    fun tweenAnimationRunning(): Boolean {
+        return tweenManager.objects.isNotEmpty()
     }
 
     /**

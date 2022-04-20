@@ -8,7 +8,7 @@ import com.badlogic.gdx.Gdx
 class GameSettings {
     private val pref by lazy { Gdx.app.getPreferences("com.andrzejn.xodus") }
     private val sFIELDSIZE = "fieldSize"
-    private val sBALLSCOUNT = "ballsCount"
+    private val sCHAOSMOVES = "chaosMoves"
     private val sCOLORSCOUNT = "colorsCount"
     private val sSAVEDGAME = "savedGame"
     private val sDARKTHEME = "darkTheme"
@@ -16,7 +16,7 @@ class GameSettings {
     private val sRECORDMOVES = "recordMoves"
     private val sRECORDPOINTS = "recordPoints"
     private var iFieldSize: Int = 7
-    private var iBallsCount: Int = 3
+    private var iChaosMoves: Int = 1
     private var iColorsCount: Int = 6
     private var iDarkTheme: Boolean = true
     private var iInGameDuration: Long = 0
@@ -29,10 +29,8 @@ class GameSettings {
         if (iFieldSize !in listOf(7, 9, 11, 13))
             iFieldSize = 9
         fieldSize = iFieldSize
-        iBallsCount = pref.getInteger(sBALLSCOUNT, 3)
-        if (iBallsCount > (iFieldSize - 1) / 2)
-            iBallsCount = (iFieldSize - 1) / 2
-        ballsCount = iBallsCount
+        iChaosMoves = pref.getInteger(sCHAOSMOVES, 1).coerceIn(0..2)
+        chaosMoves = iChaosMoves
         iColorsCount = pref.getInteger(sCOLORSCOUNT, 6)
         iColorsCount = iColorsCount.coerceIn(6, 7)
         colorsCount = iColorsCount
@@ -52,13 +50,13 @@ class GameSettings {
         }
 
     /**
-     * Balls count, 20..60
+     * Number of Chaos moves after the player move, 0..2
      */
-    var ballsCount: Int
-        get() = iBallsCount
+    var chaosMoves: Int
+        get() = iChaosMoves
         set(value) {
-            iBallsCount = value
-            pref.putInteger(sBALLSCOUNT, value)
+            iChaosMoves = value
+            pref.putInteger(sCHAOSMOVES, value)
             pref.flush()
         }
 
@@ -109,7 +107,7 @@ class GameSettings {
      * Key name for storing the records for the current tile type - game size - colors
      */
     private fun keyName(prefix: String): String {
-        return "$prefix$iBallsCount$iColorsCount$iFieldSize}"
+        return "$prefix$iChaosMoves$iColorsCount$iFieldSize}"
     }
 
     /**
@@ -136,7 +134,7 @@ class GameSettings {
      * Serialize game settings, to include into the saved game. Always 6 characters.
      */
     fun serialize(sb: com.badlogic.gdx.utils.StringBuilder) {
-        sb.append(iFieldSize, 2).append(ballsCount).append(colorsCount)
+        sb.append(iFieldSize, 2).append(chaosMoves).append(colorsCount)
     }
 
     /**
@@ -159,7 +157,7 @@ class GameSettings {
             return false
         }
         fieldSize = fv
-        ballsCount = bc
+        chaosMoves = bc
         colorsCount = cc
         return true
     }

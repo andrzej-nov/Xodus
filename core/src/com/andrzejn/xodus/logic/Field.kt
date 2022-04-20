@@ -55,9 +55,14 @@ class Field(
     }
 
     /**
+     * Convenience property to shorten code
+     */
+    val flatTile: List<Tile> get() = tile.flatten()
+
+    /**
      * Apply given lambda to all tiles
      */
-    fun applyToAllTiles(lambda: (Tile) -> Unit): Unit = tile.flatten().forEach { lambda(it) }
+    fun applyToAllTiles(lambda: (Tile) -> Unit): Unit = flatTile.forEach { lambda(it) }
 
     /**
      * Prepare field for new game.
@@ -136,7 +141,7 @@ class Field(
         }
         // We have planned all intents for moving balls.
         // Clear obsolete selectors
-        tile.flatten().flatMap { it.intent.toList() }
+        flatTile.flatMap { it.intent.toList() }
             .filter { it.selectorColor != 0 && it.selectorColor != it.intentSideColor }.forEach { it.resetSelector() }
         // Now color the segments according to intents
         applyToAllTiles { t ->
@@ -175,7 +180,7 @@ class Field(
         }
         applyToAllTiles { it.sortSegments() }
         openSelector.clear()
-        openSelector.addAll(tile.flatten().flatMap { it.intent.toList() }
+        openSelector.addAll(flatTile.flatMap { it.intent.toList() }
             .filter {
                 it.selectorColor != 0 && it.selectorSegment == null && it.selectorColor !in clickedSelectorColors
             }.sortedByDescending { it.trackStep })
@@ -231,19 +236,27 @@ class Field(
     }
 
     /**
-     * Put new tile to the specified field cell. Updates everything for next move
+     * Put given tile to the specified field cell. Updates everything for next move
      */
-    fun putNewTile(newTile: Tile, coord: Coord) {
+    fun putTile(t: Tile, coord: Coord) {
         val oldTile = tile[coord.x][coord.y]
-        newTile.coord.set(coord)
-        newTile.basePos.set(oldTile.basePos)
-        tile[coord.x][coord.y] = newTile
+        t.coord.set(coord)
+        t.basePos.set(oldTile.basePos)
+        tile[coord.x][coord.y] = t
         ball.filter { it.tile == oldTile }.forEach {
-            it.tile = newTile
+            it.tile = t
             it.segment = null
         }
         clickedSelectorColors.clear()
         planTracks()
+    }
+
+    /**
+     * Return indexes of random tile that has any colored track.
+     */
+    fun chaosTileCoord(): Coord {
+        val fTile = flatTile
+        return fTile.filter { it.segment.any { s -> s.color.any { c -> c != 0 } } }.ifEmpty { fTile }.random().coord
     }
 
 }

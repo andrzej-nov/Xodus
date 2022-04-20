@@ -99,3 +99,13 @@ logo
   xy: 0, 420
   size: 400, 300
   index: -1
+recycle
+   rotate: false
+   xy: 0, 720
+   size: 150,150
+   index: -1
+death
+   rotate: false
+   xy: 160, 720
+   size: 150,150
+   index: -1

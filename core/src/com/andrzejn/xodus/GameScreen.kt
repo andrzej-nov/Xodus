@@ -1,8 +1,12 @@
 package com.andrzejn.xodus
 
+import aurelienribon.tweenengine.Tween
+import com.andrzejn.xodus.helper.FloatingTile
+import com.andrzejn.xodus.helper.TW_POS_XY
 import com.andrzejn.xodus.logic.Coord
 import com.andrzejn.xodus.logic.Field
 import com.andrzejn.xodus.logic.Tile
+import com.badlogic.gdx.Gdx.graphics
 import com.badlogic.gdx.Gdx.input
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
@@ -93,6 +97,11 @@ class GameScreen(
      */
     private var newTile: Tile? = null
 
+    /**
+     * The floating tile rendered for tween animations
+     */
+    private var floatingTile = FloatingTile(ctx)
+
     private val chaos = Sprite(ctx.chaos)
     private val logo = Sprite(ctx.logo).apply { setAlpha(0.5f) }
 
@@ -120,16 +129,6 @@ class GameScreen(
         else field = Field(ctx).apply {
             newGame()
             setSideLen(sideLen) { t -> setTileBasePos(t.coord, t.basePos) }
-        }
-    }
-
-    /**
-     * Creates new tile and prepares it to show at the newTilePos
-     */
-    private fun createNewTile() {
-        newTile = Tile().apply {
-            setSideLen(this@GameScreen.sideLen)
-            basePos.set(newTilePos).sub(sideLen / 2f, sideLen / 2f)
         }
     }
 
@@ -278,7 +277,9 @@ class GameScreen(
     override fun render(delta: Float) {
         super.render(delta)
         try {
-            ctx.tweenManager.update(delta)
+            // Here the Tween Engine updates all our respective object fields when any tween animation is requested
+            ctx.tweenManager.update(if (graphics.isContinuousRendering) delta else 0.01f)
+            graphics.isContinuousRendering = ctx.tweenAnimationRunning()
         } catch (ex: Exception) {
             // There should be no exceptions here. But if they are, simply restart the game.
             newGame(false)
@@ -289,10 +290,9 @@ class GameScreen(
         if (!ctx.batch.isDrawing) ctx.batch.begin()
         ctx.sd.setColor(ctx.theme.gameboardBackground)
         ctx.sd.filledRectangle(basePos.x, basePos.y, wholeFieldSize, wholeFieldSize)
-        ctx.pointerPosition(input.x, input.y).toScreenCell().toScreenCellCorner()
+        ctx.pointerPosition(input.x, input.y).toScreenCell().toScreenCellCorner() // Sets the c and v variables
         if (c.isSet())
             ctx.sd.filledRectangle(v.x, v.y, sideLen, sideLen, ctx.theme.cellHilight)
-        // Draw screen background and border panels
         renderFieldGrid()
         field.render()
         logo.draw(ctx.batch)
@@ -301,13 +301,7 @@ class GameScreen(
         ctx.sd.filledCircle(newTilePos, sideLen * 0.9f)
         ctx.sd.setColor(ctx.theme.settingSeparator)
         ctx.sd.circle(newTilePos.x, newTilePos.y, sideLen * 0.9f, 1f)
-        val nT = newTile
-        if (nT != null) with(nT) {
-            basePos.set(if (dragFrom == DragSource.NewTile) dragPos else newTilePos).sub(sideLen / 2, sideLen / 2)
-            ctx.sd.filledRectangle(basePos.x, basePos.y, sideLen, sideLen, ctx.theme.gameboardBackground)
-            ctx.sd.rectangle(basePos.x, basePos.y, sideLen, sideLen, ctx.theme.gameBorders, 1f)
-            render(ctx)
-        }
+        floatingTile.render()
         if (ctx.batch.isDrawing) ctx.batch.end()
     }
 
@@ -333,18 +327,81 @@ class GameScreen(
         }
     }
 
+    private var inAnimation = false
+
     /**
      * Set the selector or put the new tile into place, depending on current state
      */
-    private fun selectorOrNewTileAt(v: Vector2) {
+    private fun setSelectorOrPutNewTileAt(v: Vector2) {
         val nT = newTile
         if (nT == null) {
             if (field.selectorsHitTest(v))
                 createNewTile()
         } else {
-            field.putNewTile(nT, v.toFieldTile())
-            newTile = null
+            val coord = v.toFieldTile()
+            if (coord.isNotSet()) {
+                inAnimation = true
+                v.set(newTilePos).sub(sideLen / 2f, sideLen / 2f)
+                Tween.to(floatingTile, TW_POS_XY, 0.1f).target(v.x, v.y)
+                    .setCallback { _, _ ->
+                        nT.defaultNewTileBasePos()
+                        inAnimation = false
+                    }
+                    .start(ctx.tweenManager)
+            } else {
+                inAnimation = true
+                v.set(coord.toScreenCellCorner())
+                Tween.to(floatingTile, TW_POS_XY, 0.3f).target(v.x, v.y)
+                    .setCallback { _, _ ->
+                        field.putTile(nT, coord)
+                        newTile = null
+                        floatingTile.tile = null
+                        inAnimation = false
+                        chaosMove(ctx.gs.chaosMoves)
+                    }
+                    .start(ctx.tweenManager)
+            }
         }
+    }
+
+    /**
+     * Creates new tile and prepares it to show at the newTilePos
+     */
+    private fun createNewTile() {
+        newTile = Tile().apply {
+            setSideLen(this@GameScreen.sideLen)
+            defaultNewTileBasePos()
+            floatingTile.tile = this
+        }
+    }
+
+    /**
+     * Set default new tile position in the circle
+     */
+    private fun Tile.defaultNewTileBasePos() = basePos.set(newTilePos).sub(sideLen / 2f, sideLen / 2f)
+
+    /**
+     * Find a position for the Chaos move, create and put the tile there.
+     */
+    private fun chaosMove(move: Int) {
+        if (move <= 0)
+            return
+        val t = Tile().apply {
+            setSideLen(this@GameScreen.sideLen)
+            basePos.set(chaosPos).sub(sideLen / 2, sideLen / 2)
+        }
+        floatingTile.tile = t
+        val c = field.chaosTileCoord()
+        c.toScreenCellCorner() // sets the v variable
+        inAnimation = true
+        Tween.to(floatingTile, TW_POS_XY, 0.5f).target(v.x, v.y)
+            .setCallback { _, _ ->
+                field.putTile(t, c)
+                floatingTile.tile = null
+                inAnimation = false
+                chaosMove(move - 1)
+            }
+            .start(ctx.tweenManager)
     }
 
     /**
@@ -357,6 +414,8 @@ class GameScreen(
          * Invoked when the player drags something on the screen.
          */
         override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
+            if (inAnimation)
+                return super.touchDragged(screenX, screenY, pointer)
             dragPos.set(ctx.pointerPosition(screenX, screenY))
             val c = dragPos.toScreenCell()
             if (dragFrom == DragSource.None) {
@@ -366,6 +425,8 @@ class GameScreen(
                 else if (dragPos.dst(newTilePos) < sideLen)
                     dragFrom = DragSource.NewTile
             }
+            if (dragFrom == DragSource.NewTile)
+                floatingTile.position.set(dragPos).sub(sideLen / 2, sideLen / 2)
             if (dragFrom == DragSource.Board) {
                 if (c.isSet()) {
                     if (cellDragOrigin.isNotSet())
@@ -386,15 +447,20 @@ class GameScreen(
          * Called when screen is untouched (mouse button released)
          */
         override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-            if (button == Input.Buttons.RIGHT) // For temporary testing. TODO Remove it before release
+            if (inAnimation)
+                return super.touchDragged(screenX, screenY, pointer)
+            if (button == Input.Buttons.RIGHT) { // For temporary testing. TODO Remove it before release
                 newGame(false)
+                return super.touchUp(screenX, screenY, pointer, button)
+            }
             if (dragFrom == DragSource.None || dragFrom == DragSource.NewTile || dragStart.dst(dragPos) < 4)
             // The last condition is a safeguard against clicks with minor pointer slides that are erroneously
             // interpreted as drags
-                selectorOrNewTileAt(ctx.pointerPosition(screenX, screenY))
+                setSelectorOrPutNewTileAt(ctx.pointerPosition(screenX, screenY))
             cellDragOrigin.unSet()
             dragPos.set(Vector2.Zero)
             dragFrom = DragSource.None
+            newTile?.defaultNewTileBasePos()
             return super.touchUp(screenX, screenY, pointer, button)
         }
 
