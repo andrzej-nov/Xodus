@@ -17,12 +17,12 @@ class ArcSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
     /**
      * Arc starting angle
      */
-    private val angle: Float = when (type) {
-        SegmentType.ArcLT -> -PI.toFloat() / 2
-        SegmentType.ArcTR -> -PI.toFloat()
-        SegmentType.ArcRB -> PI.toFloat() / 2
-        else -> 0f
-    }
+    private val angle = mapOf(
+        SegmentType.ArcLT to -PI.toFloat() / 2,
+        SegmentType.ArcTR to -PI.toFloat(),
+        SegmentType.ArcRB to PI.toFloat() / 2,
+        SegmentType.ArcBL to 0f
+    )[type]!!
 
     /**
      * Arc radius
@@ -79,9 +79,25 @@ class ArcSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
      * Point coordinates for the given split position.
      * Relative to the tile bottom-left corner.
      */
-    override fun coordinatesOf(split: Float): Vector2 {
-        return v.set(radius, 0f).rotateRad(angle + radians * split).add(center)
-    }
+    override fun coordinatesOf(split: Float): Vector2 = v.set(radius, 0f).rotateRad(angle + radians * split).add(center)
+
+    private val ballFaceDirection = mapOf(
+        (Side.Left to SegmentType.ArcLT) to PI.toFloat() / 2,
+        (Side.Top to SegmentType.ArcLT) to -PI.toFloat() / 2,
+        (Side.Top to SegmentType.ArcTR) to PI.toFloat() / 2,
+        (Side.Right to SegmentType.ArcTR) to -PI.toFloat() / 2,
+        (Side.Right to SegmentType.ArcRB) to PI.toFloat() / 2,
+        (Side.Bottom to SegmentType.ArcRB) to -PI.toFloat() / 2,
+        (Side.Bottom to SegmentType.ArcBL) to PI.toFloat() / 2,
+        (Side.Left to SegmentType.ArcBL) to -PI.toFloat() / 2
+    )
+
+    /**
+     * Current direction angle for the ball, considering its position, segment type and move direction.
+     * In radians, 0 is straight right, counterclockwise.
+     */
+    override fun directionAngleFor(b: Ball): Float =
+        angle + radians * (ballPositionToSplit(b)) + ballFaceDirection[b.movingFromSide to type]!!
 
     /**
      * Render this segment, overriding color and line width
@@ -103,12 +119,7 @@ class ArcSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
         }
         ctx.sd.setColor(colorFor(color[1], ctx))
         ctx.sd.arc(
-            v.x,
-            v.y,
-            radius,
-            angle + splitRadians,
-            radians - splitRadians,
-            colorBasedLineWidth(color[1])
+            v.x, v.y, radius, angle + splitRadians, radians - splitRadians, colorBasedLineWidth(color[1])
         )
     }
 

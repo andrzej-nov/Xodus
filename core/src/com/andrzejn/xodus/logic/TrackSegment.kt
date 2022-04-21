@@ -59,6 +59,12 @@ abstract class TrackSegment(
     fun coordinatesOf(b: Ball): Vector2 = coordinatesOf(ballPositionToSplit(b))
 
     /**
+     * Current direction angle for the ball, considering its position, segment type and move direction.
+     * In radians, 0 is straight right, counterclockwise.
+     */
+    abstract fun directionAngleFor(b: Ball): Float
+
+    /**
      * Translates the current ball position into the split value
      */
     fun ballPositionToSplit(b: Ball): Float =

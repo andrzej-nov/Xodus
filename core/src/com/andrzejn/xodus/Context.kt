@@ -253,7 +253,7 @@ class Context(
         scoreMoves = Color(Color.GOLD).apply { a = 0.7f },
         light = this.dark,
         dark = this.light,
-        eyeColor = Color.GRAY,
+        eyeColor = Color.BLACK,
         gameBorders = Color.GRAY,
         ballColor = Color.WHITE,
         cellHilight = Color.DARK_GRAY
@@ -270,7 +270,7 @@ class Context(
         scoreMoves = Color(Color.GOLD).apply { a = 0.7f },
         light = this.light,
         dark = this.dark,
-        eyeColor = Color.GRAY,
+        eyeColor = Color.DARK_GRAY,
         gameBorders = Color.DARK_GRAY,
         ballColor = Color.GRAY,
         cellHilight = Color.LIGHT_GRAY

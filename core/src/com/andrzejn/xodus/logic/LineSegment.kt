@@ -3,6 +3,7 @@ package com.andrzejn.xodus.logic
 import com.andrzejn.xodus.Context
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.graphics.Color
+import kotlin.math.PI
 
 /**
  * Line track segment (lineTB or lineLR)
@@ -94,5 +95,14 @@ class LineSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
             colorFor(color[1], ctx),
             colorBasedLineWidth(color[1])
         )
+    }
+
+    /**
+     * Current direction angle for the ball, considering its position, segment type and move direction.
+     * In radians, 0 is straight right, counterclockwise.
+     */
+    override fun directionAngleFor(b: Ball): Float = when (type) {
+        SegmentType.LineBT -> if (b.movingFromSide == Side.Bottom) PI.toFloat() / 2 else -PI.toFloat() / 2
+        else -> if (b.movingFromSide == Side.Left) 0f else PI.toFloat()
     }
 }

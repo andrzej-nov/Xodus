@@ -92,24 +92,6 @@ class Tile {
     fun render(ctx: Context): Unit = segment.forEach { it.render(ctx) }
 
     /**
-     * Variable for internal calculations to reduce the GC load
-     */
-    private val v = Vector2()
-
-    /**
-     * Coordinates of the middle of the given side. Relative to the tile bottim-left corner
-     */
-    fun middleOfSide(side: Side): Vector2 {
-        v.set(basePos)
-        return when (side) {
-            Side.Top -> v.add(sideLen / 2, sideLen)
-            Side.Right -> v.add(sideLen, sideLen / 2)
-            Side.Bottom -> v.add(sideLen / 2, 0f)
-            Side.Left -> v.add(0f, sideLen / 2)
-        }
-    }
-
-    /**
      * Reset this segment colors.
      */
     fun clearSegmentColors(): Unit = segment.forEach { it.reset() }
