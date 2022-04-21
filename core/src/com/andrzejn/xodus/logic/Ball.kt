@@ -22,7 +22,7 @@ class Ball(
      * Null means the ball is at the tile side that has several segments going from it,
      * so the player must select the segment before movement continues.
      */
-    var segment: TrackSegment? = tile.startupBottomSegment
+    var segment: TrackSegment? = null
 
     /**
      * The ball position on the current tile segment. In range 0..1, then it translates into segment.split

@@ -109,12 +109,9 @@ class Tile {
         }
     }
 
-    fun clearSegmentColors() = segment.forEach { it.reset() }
-
     /**
-     * Get initial segment to put the ball at the tile bottom, preferably LineBT
+     * Reset this segment colors.
      */
-    val startupBottomSegment: TrackSegment
-        get() = segment.firstOrNull { it.type == SegmentType.LineBT }
-            ?: segment.first { it.type in listOf(SegmentType.ArcBL, SegmentType.ArcRB) }
+    fun clearSegmentColors(): Unit = segment.forEach { it.reset() }
+
 }

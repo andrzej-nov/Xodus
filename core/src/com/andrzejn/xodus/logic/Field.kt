@@ -27,7 +27,7 @@ class Field(
      * The balls removed from the field (but they may reappear, according to the game settings
      * and game conditions
      */
-    private val deadBall = mutableListOf<Ball>()
+    private val deadBall = mutableSetOf<Ball>()
 
     /**
      * List of selectors that the player can (and should) select.
@@ -57,7 +57,7 @@ class Field(
     /**
      * Convenience property to shorten code
      */
-    val flatTile: List<Tile> get() = tile.flatten()
+    private val flatTile: List<Tile> get() = tile.flatten()
 
     /**
      * Apply given lambda to all tiles
@@ -87,55 +87,20 @@ class Field(
      * Init/update the planned ball tracks.
      */
     private fun planTracks() {
-        applyToAllTiles {
+        applyToAllTiles { // Clear old plans
             it.clearIntents()
             it.clearSegmentColors()
-        } // Clear old plans
+        }
         val movingBalls = ball.map { Ball(it) }.toMutableList()
         var step = 1
+        openSelector.clear()
+        val ballsToClear = mutableSetOf<Ball>()
         while (movingBalls.isNotEmpty()) {
-            // Remove balls that collided at the same point - they die here and have no further tracks
-            val ballsToClear = movingBalls.filter { b1 ->
-                movingBalls
-                    .any { b2 -> b1 != b2 && b1.tile == b2.tile && b1.movingFromSide == b2.movingFromSide }
-            }.toMutableSet()
+            movingBalls.removeAll(collided(movingBalls))
+            movingBalls.forEach { b -> if (setIntents(b, step)) ballsToClear.add(b) }
             movingBalls.removeAll(ballsToClear)
             ballsToClear.clear()
-            // Now record moving intents of remaining balls
-            for (b in movingBalls) {
-                val sideIntent = b.tile.intent[b.movingFromSide.ordinal]
-                if (sideIntent.intentSideColor != 0) {
-                    // This side is already included into some planned track. Proceed no further.
-                    ballsToClear.add(b)
-                    continue
-                }
-                sideIntent.intentSideColor = b.color
-                sideIntent.trackStep = step
-                if (b.segment != null) // The ball already knows its direction. Record it to the intent.
-                    sideIntent.intentSegment = b.segment
-                else if (sideIntent.intentSegment != null)
-                // The side already has the (only one possible) direction intent. Use it.
-                    b.segment = sideIntent.intentSegment
-                else { // Default intent checks are over. Check the selector.
-                    if (sideIntent.selectorColor != b.color) {
-                        // The selector was not set or was set for another ball, but plans have changed now
-                        sideIntent.resetSelector()
-                        sideIntent.selectorColor = b.color
-                    }
-                    // The selector at this side is either already set by the player for this ball or may have
-                    // a single direction only. Use that direction, then.
-                    sideIntent.intentSegment = sideIntent.selectorSegment
-                    b.segment = sideIntent.selectorSegment
-                }
-                if (b.segment == null) // We don't know where to move further. Stop planning for that ball.
-                    ballsToClear.add(b)
-            }
-            // Clear all balls that entered the same segment. They will collide on nearest advance.
-            ballsToClear.addAll(movingBalls.filter { b1 ->
-                movingBalls.any { b2 -> b1 != b2 && b1.segment != null && b1.segment == b2.segment }
-            })
-            movingBalls.removeAll(ballsToClear)
-            ballsToClear.clear()
+            movingBalls.removeAll(onCollisionCourse(movingBalls))
             movingBalls.forEach { advanceToNextTile(it) }
             step++
         }
@@ -143,65 +108,162 @@ class Field(
         // Clear obsolete selectors
         flatTile.flatMap { it.intent.toList() }
             .filter { it.selectorColor != 0 && it.selectorColor != it.intentSideColor }.forEach { it.resetSelector() }
-        // Now color the segments according to intents
         applyToAllTiles { t ->
-            t.intent.mapNotNull { it.intentSegment }.distinct().forEach { s ->
-                val intent0 = t.intent[s.type.sides[0].ordinal]
-                val intent1 = t.intent[s.type.sides[1].ordinal]
-
-                if (intent0.intentSegment == s && intent1.intentSegment != s) {
-                    // Side 1 has no claim over this segment
-                    s.color[0] = intent0.intentSideColor
-                    s.color[1] = intent0.intentSideColor
-                    s.split = 0f
-                } else if (intent1.intentSegment == s && intent0.intentSegment != s) {
-                    // Side 0 has no claim over this segment
-                    s.color[0] = intent1.intentSideColor
-                    s.color[1] = intent1.intentSideColor
-                    s.split = 0f
-                } else if (intent0.intentSideColor == 0 || intent0.intentSideColor == intent1.intentSideColor ||
-                    (intent0.trackStep > intent1.trackStep && intent1.trackStep > 0)
-                ) {
-                    // Side 0 has no claim, or both sides claim the same color, or side 1 was here earlier
-                    s.color[0] = intent1.intentSideColor
-                    s.color[1] = intent1.intentSideColor
-                    s.split = 0f
-                } else if (intent1.intentSideColor == 0 || (intent1.trackStep > intent0.trackStep && intent0.trackStep > 0)) {
-                    // Side 1 has no claim or side 0 was here earlier
-                    s.color[0] = intent0.intentSideColor
-                    s.color[1] = intent0.intentSideColor
-                    s.split = 0f
-                } else { // Sides claim different colors and came here at the same time
-                    s.color[0] = intent0.intentSideColor
-                    s.color[1] = intent1.intentSideColor
-                    s.split = 0.5f
-                }
-            }
+            t.intent.mapNotNull { it.intentSegment }.distinct().forEach { s -> colorSegmentByIntents(t, s) }
         }
-        applyToAllTiles { it.sortSegments() }
-        openSelector.clear()
-        openSelector.addAll(flatTile.flatMap { it.intent.toList() }
-            .filter {
-                it.selectorColor != 0 && it.selectorSegment == null && it.selectorColor !in clickedSelectorColors
-            }.sortedByDescending { it.trackStep })
+        applyToAllTiles { it.sortSegments() } // Ensure that colored segments are drawn over uncolored
+        openSelector.sortByDescending { it.trackStep } // If some selectors visually overlap, give priority to ones
+        // that will be needed earlier
+    }
+
+    /**
+     * Set move intents for the ball at given planning position
+     */
+    private fun setIntents(
+        b: Ball,
+        step: Int
+    ): Boolean {
+        val sideIntent = b.tile.intent[b.movingFromSide.ordinal]
+        if (sideIntent.intentSideColor != 0 || with(
+                otherSide(
+                    b.tile,
+                    b.movingFromSide
+                )
+            ) { first.intent[second.ordinal] }.intentSideColor != 0
+        ) return true
+        // This side is already included into some planned track. Proceed no further.
+        sideIntent.intentSideColor = b.color
+        sideIntent.trackStep = step
+        if (b.segment != null) // The ball already knows its direction. Record it to the intent.
+            sideIntent.intentSegment = b.segment
+        else if (sideIntent.intentSegment != null)
+        // The side already has the (only one possible) direction intent. Use it.
+            b.segment = sideIntent.intentSegment
+        else { // Default intent checks are over. Check the selector.
+            if (sideIntent.selectorColor != b.color) {
+                // The selector was not set or was set for another ball, but plans have changed now
+                sideIntent.resetSelector()
+                sideIntent.selectorColor = b.color
+            }
+            // The selector at this side is either already set by the player for this ball or may have
+            // a single direction only. Use that direction, then.
+            sideIntent.intentSegment = sideIntent.selectorSegment
+            b.segment = sideIntent.selectorSegment
+        }
+        if (b.segment == null) { // If we don't know where to move further then stop planning for that ball.
+            if (b.color !in clickedSelectorColors) openSelector.add(sideIntent)
+            return true
+        }
+        return false
+    }
+
+    /**
+     * Color the segment accordint to the plan
+     */
+    private fun colorSegmentByIntents(t: Tile, s: TrackSegment) {
+        val intent0 = t.intent[s.type.sides[0].ordinal]
+        val intent1 = t.intent[s.type.sides[1].ordinal]
+
+        if (intent0.intentSegment == s && intent1.intentSegment != s) {
+            // Side 1 has no claim over this segment
+            s.color[0] = intent0.intentSideColor
+            s.color[1] = intent0.intentSideColor
+            s.split = 0f
+        } else if (intent1.intentSegment == s && intent0.intentSegment != s) {
+            // Side 0 has no claim over this segment
+            s.color[0] = intent1.intentSideColor
+            s.color[1] = intent1.intentSideColor
+            s.split = 0f
+        } else if (intent0.intentSideColor == 0 || intent0.intentSideColor == intent1.intentSideColor ||
+            (intent0.trackStep > intent1.trackStep && intent1.trackStep > 0)
+        ) {
+            // Side 0 has no claim, or both sides claim the same color, or side 1 was here earlier
+            s.color[0] = intent1.intentSideColor
+            s.color[1] = intent1.intentSideColor
+            s.split = 0f
+        } else if (intent1.intentSideColor == 0 ||
+            (intent1.trackStep > intent0.trackStep && intent0.trackStep > 0)
+        ) {
+            // Side 1 has no claim or side 0 was here earlier
+            s.color[0] = intent0.intentSideColor
+            s.color[1] = intent0.intentSideColor
+            s.split = 0f
+        } else { // Sides claim different colors and came here at the same time
+            s.color[0] = intent0.intentSideColor
+            s.color[1] = intent1.intentSideColor
+            s.split = 0.5f
+        }
+    }
+
+    /**
+     * List of balls entered the same segment. They are either at the same side (and have collided already)
+     * or on other side (and will collide on next move)
+     */
+    private fun onCollisionCourse(balls: List<Ball>) = balls.filter { b1 ->
+        balls.any { b2 ->
+            b1 != b2 && b1.segment != null && b1.segment == b2.segment
+        }
+    }
+
+    /**
+     * List of balls collided at the same tile side.
+     */
+    private fun collided(balls: List<Ball>) = balls.filter { b1 ->
+        balls.any { b2 ->
+            b1 != b2 && ((b1.tile == b2.tile && b1.movingFromSide == b2.movingFromSide) || (with(
+                otherSide(
+                    b1.tile, b1.movingFromSide
+                )
+            ) { b2.tile == first && b2.movingFromSide == second }))
+        }
+    }
+
+    /**
+     * Move balls by one position. Returns true if there are no open selectors to select and need to create new tile.
+     */
+    fun advanceBalls(): Boolean {
+        killBalls(collided(ball).plus(onCollisionCourse(ball)))
+        //TODO For balls on collision course need to draw collision animation
+        //TODO if ball.isEmpty then trigger endgame
+        ball.forEach { advanceToNextTile(it) }
+        killBalls(collided(ball))
+        planTracks()
+        return openSelector.isEmpty()
+    }
+
+    private fun killBalls(collisions: List<Ball>) {
+        deadBall.addAll(collisions)
+        ball.removeAll(collisions)
     }
 
     /**
      * Moves the ball to the beginning of next tile according to the segment direction.
      */
     private fun advanceToNextTile(ball: Ball) {
-        val currentSegment = ball.segment ?: segmentFromTileSide(ball) ?: return
-        val movingToSide = currentSegment.type.sides.first { it != ball.movingFromSide }
-        val current = currentSegment.tile.coord
-        ball.tile = when (movingToSide) {
-            Side.Top -> tile[current.x][ctx.clipWrap(current.y + 1)]
-            Side.Right -> tile[ctx.clipWrap(current.x + 1)][current.y]
-            Side.Bottom -> tile[current.x][ctx.clipWrap(current.y - 1)]
-            Side.Left -> tile[ctx.clipWrap(current.x - 1)][current.y]
+        with(
+            otherSide(ball.tile,
+                (ball.segment ?: segmentFromTileSide(ball) ?: return).type.sides.first { it != ball.movingFromSide })
+        ) {
+            ball.tile = first
+            ball.movingFromSide = second
         }
-        ball.movingFromSide = movingToSide.otherSide
         ball.segment = segmentFromTileSide(ball)
         ball.position = 0f
+    }
+
+    /**
+     * Returns the other side of the given tile side
+     */
+    private fun otherSide(
+        currentTile: Tile, currentSide: Side
+    ): Pair<Tile, Side> {
+        val currentCoord = currentTile.coord
+        return when (currentSide) {
+            Side.Top -> tile[currentCoord.x][ctx.clipWrap(currentCoord.y + 1)]
+            Side.Right -> tile[ctx.clipWrap(currentCoord.x + 1)][currentCoord.y]
+            Side.Bottom -> tile[currentCoord.x][ctx.clipWrap(currentCoord.y - 1)]
+            Side.Left -> tile[ctx.clipWrap(currentCoord.x - 1)][currentCoord.y]
+        } to currentSide.otherSide
     }
 
     private fun segmentFromTileSide(ball: Ball): TrackSegment? {
@@ -232,17 +294,17 @@ class Field(
                 return openSelector.size == 0
             }
         }
-        return openSelector.size == 0
+        return openSelector.isEmpty()
     }
 
     /**
      * Put given tile to the specified field cell. Updates everything for next move
      */
-    fun putTile(t: Tile, coord: Coord) {
-        val oldTile = tile[coord.x][coord.y]
-        t.coord.set(coord)
+    fun putTile(t: Tile, x: Int, y: Int) {
+        val oldTile = tile[x][y]
+        t.coord.set(x, y)
         t.basePos.set(oldTile.basePos)
-        tile[coord.x][coord.y] = t
+        tile[x][y] = t
         ball.filter { it.tile == oldTile }.forEach {
             it.tile = t
             it.segment = null

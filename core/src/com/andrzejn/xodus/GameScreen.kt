@@ -338,22 +338,25 @@ class GameScreen(
             if (field.selectorsHitTest(v))
                 createNewTile()
         } else {
-            val coord = v.toFieldTile()
+            val coord = v.toScreenCell()
             if (coord.isNotSet()) {
                 inAnimation = true
                 v.set(newTilePos).sub(sideLen / 2f, sideLen / 2f)
                 Tween.to(floatingTile, TW_POS_XY, 0.1f).target(v.x, v.y)
                     .setCallback { _, _ ->
-                        nT.defaultNewTileBasePos()
+                        nT.setDefaultNewTileBasePos()
                         inAnimation = false
                     }
                     .start(ctx.tweenManager)
             } else {
                 inAnimation = true
                 v.set(coord.toScreenCellCorner())
+                coord.screenCellToFieldTile()
+                val (x, y) = coord.x to coord.y // Split to local variables to avoid side evvects from reusing class
+                // properties for coord translations in subsequent render() calls
                 Tween.to(floatingTile, TW_POS_XY, 0.3f).target(v.x, v.y)
                     .setCallback { _, _ ->
-                        field.putTile(nT, coord)
+                        field.putTile(nT, x, y)
                         newTile = null
                         floatingTile.tile = null
                         inAnimation = false
@@ -370,7 +373,7 @@ class GameScreen(
     private fun createNewTile() {
         newTile = Tile().apply {
             setSideLen(this@GameScreen.sideLen)
-            defaultNewTileBasePos()
+            setDefaultNewTileBasePos()
             floatingTile.tile = this
         }
     }
@@ -378,25 +381,30 @@ class GameScreen(
     /**
      * Set default new tile position in the circle
      */
-    private fun Tile.defaultNewTileBasePos() = basePos.set(newTilePos).sub(sideLen / 2f, sideLen / 2f)
+    private fun Tile.setDefaultNewTileBasePos() = basePos.set(newTilePos).sub(sideLen / 2f, sideLen / 2f)
 
     /**
      * Find a position for the Chaos move, create and put the tile there.
      */
     private fun chaosMove(move: Int) {
-        if (move <= 0)
+        if (move <= 0) {
+            if (field.advanceBalls())
+                createNewTile()
             return
+        }
         val t = Tile().apply {
             setSideLen(this@GameScreen.sideLen)
             basePos.set(chaosPos).sub(sideLen / 2, sideLen / 2)
         }
         floatingTile.tile = t
         val c = field.chaosTileCoord()
-        c.toScreenCellCorner() // sets the v variable
+        val (x, y) = c.x to c.y // split to local variables to avoid side effects of reusing the class properties
+        // in subsequent render() calls
+        c.fieldTileToScreenCell().toScreenCellCorner() // sets the v variable
         inAnimation = true
         Tween.to(floatingTile, TW_POS_XY, 0.5f).target(v.x, v.y)
             .setCallback { _, _ ->
-                field.putTile(t, c)
+                field.putTile(t, x, y)
                 floatingTile.tile = null
                 inAnimation = false
                 chaosMove(move - 1)
@@ -460,7 +468,7 @@ class GameScreen(
             cellDragOrigin.unSet()
             dragPos.set(Vector2.Zero)
             dragFrom = DragSource.None
-            newTile?.defaultNewTileBasePos()
+            newTile?.setDefaultNewTileBasePos()
             return super.touchUp(screenX, screenY, pointer, button)
         }
 
