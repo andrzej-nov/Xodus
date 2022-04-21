@@ -1,6 +1,8 @@
 package com.andrzejn.xodus.logic
 
+import aurelienribon.tweenengine.Tween
 import com.andrzejn.xodus.Context
+import com.andrzejn.xodus.helper.TW_POSITION
 import com.badlogic.gdx.math.Vector2
 
 /**
@@ -28,6 +30,11 @@ class Field(
      * and game conditions
      */
     private val deadBall = mutableSetOf<Ball>()
+
+    /**
+     * The balls that are going on collision course. They will be killed during the move
+     */
+    private val ballsOnCollisionCourse = mutableSetOf<Ball>()
 
     /**
      * List of selectors that the player can (and should) select.
@@ -221,14 +228,22 @@ class Field(
     /**
      * Move balls by one position. Returns true if there are no open selectors to select and need to create new tile.
      */
-    fun advanceBalls(): Boolean {
-        killBalls(collided(ball).plus(onCollisionCourse(ball)))
-        //TODO For balls on collision course need to draw collision animation
-        //TODO if ball.isEmpty then trigger endgame
-        ball.forEach { advanceToNextTile(it) }
+    fun advanceBalls(callback: () -> Unit) {
         killBalls(collided(ball))
-        planTracks()
-        return openSelector.isEmpty()
+        ballsOnCollisionCourse.clear()
+        ballsOnCollisionCourse.addAll(onCollisionCourse(ball))
+        ballPosition = 0f
+        ball.forEach { it.segment = segmentFromTileSide(it) }
+        Tween.to(this, TW_POSITION, 1f).target(1f)
+            .setCallback { _, _ ->
+                ball.forEach { advanceToNextTile(it) }
+                ballPosition = 0f
+                killBalls(collided(ball))
+                //TODO if ball.isEmpty then trigger endgame
+                planTracks()
+                if (openSelector.isEmpty()) callback()
+            }
+            .start(ctx.tweenManager)
     }
 
     private fun killBalls(collisions: List<Ball>) {
@@ -273,11 +288,25 @@ class Field(
     }
 
     /**
+     * Current tween position of movong balls
+     */
+    var ballPosition: Float = 0f
+
+    /**
      * Render everything on the field
      */
     fun render() {
         applyToAllTiles { it.render(ctx) }
-        ball.forEach { it.render(ctx) }
+        ball.forEach {
+            it.position = ballPosition
+            it.render(ctx)
+            if (ballPosition >= 0.5f && it in ballsOnCollisionCourse) {
+                deadBall.add(it)
+                ballsOnCollisionCourse.remove(it)
+                ball.remove(it)
+                // TODO Start blotting animation
+            }
+        }
         openSelector.forEach { it.render(ctx) }
     }
 

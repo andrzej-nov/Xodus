@@ -388,8 +388,7 @@ class GameScreen(
      */
     private fun chaosMove(move: Int) {
         if (move <= 0) {
-            if (field.advanceBalls())
-                createNewTile()
+            field.advanceBalls { createNewTile() }
             return
         }
         val t = Tile().apply {

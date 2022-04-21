@@ -3,6 +3,7 @@ package com.andrzejn.xodus
 import aurelienribon.tweenengine.Tween
 import aurelienribon.tweenengine.TweenManager
 import com.andrzejn.xodus.helper.*
+import com.andrzejn.xodus.logic.Field
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.assets.loaders.TextureAtlasLoader
@@ -68,6 +69,7 @@ class Context(
 
     init { // Need to specify which objects' properties will be used for animations
         Tween.registerAccessor(FloatingTile::class.java, FloatingTileAccessor())
+        Tween.registerAccessor(Field::class.java, FieldAccessor())
     }
 
     /**
