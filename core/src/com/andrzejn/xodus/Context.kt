@@ -166,6 +166,7 @@ class Context(
     val exit: TextureRegion get() = texture("exit")
     val info: TextureRegion get() = texture("info")
     val help: TextureRegion get() = texture("help")
+    val ok: TextureRegion get() = texture("ok")
     val gear: TextureRegion get() = texture("gear")
     val darktheme: TextureRegion get() = texture("darktheme")
     val lighttheme: TextureRegion get() = texture("lighttheme")
@@ -174,6 +175,7 @@ class Context(
     val icongithub: TextureRegion get() = texture("icongithub")
     val chaos: TextureRegion get() = texture("chaos")
     val logo: TextureRegion get() = texture("logo")
+    val sizearrows: TextureRegion get() = texture("sizearrows")
 
     /**
      * Create a bitmap font with given size, base color etc. from the provided TrueType font.

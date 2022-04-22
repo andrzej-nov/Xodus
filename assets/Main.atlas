@@ -44,7 +44,7 @@ settings
   xy: 110, 200
   size: 100, 100
   index: -1
-hit
+ok
   rotate: false
   xy: 220, 200
   size: 100, 100
@@ -108,4 +108,9 @@ death
    rotate: false
    xy: 160, 720
    size: 150,150
+   index: -1
+sizearrows
+   rotate: false
+   xy: 0, 880
+   size: 136,136
    index: -1

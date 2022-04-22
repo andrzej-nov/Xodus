@@ -242,23 +242,23 @@ class Field(
         ballsOnCollisionCourse.addAll(onCollisionCourse(ball))
         ballPosition = 0f
         ball.forEach { it.segment = segmentFromTileSide(it) }
+        blot.forEach { it.fade() }
+        blot.removeIf { it.alpha <= 0 }
         Tween.to(this, TW_POSITION, 1f).target(1f)
             .setCallback { _, _ ->
                 ball.forEach { advanceToNextTile(it) }
                 ballPosition = 0f
                 killBalls(collided(ball))
+                clickedSelectorColors.clear()
                 planTracks()
-                if (openSelector.isEmpty()) callback()
+                callback()
             }
             .start(ctx.tweenManager)
-        blot.forEach { it.fade() }
-        blot.removeIf { it.alpha <= 0 }
     }
 
     private fun killBalls(collisions: List<Ball>) {
         if (collisions.isEmpty())
             return
-        println("Killed balls ${collisions.forEach { it.color }}")
         deadBall.addAll(collisions)
         ball.removeAll(collisions)
         collisions.distinct().forEach { blot.add(Blot(ctx, it.color, it.tile, it.currentPosition)) }
@@ -328,17 +328,17 @@ class Field(
     /**
      * Check if the given pointer screen coordinates match some of the active selector arrows.
      * It there is a match, respective selector is set and the track extended.
-     * Returns true if there are no more available selectors.
+     * Returns true if there was the selector match.
      */
     fun selectorsHitTest(v: Vector2): Boolean {
         openSelector.toTypedArray().reversed().forEach {
             if (it.selectorClicked(v)) {
                 clickedSelectorColors.add(it.selectorColor)
                 planTracks()
-                return openSelector.size == 0
+                return true
             }
         }
-        return openSelector.isEmpty()
+        return false
     }
 
     /**
@@ -353,7 +353,7 @@ class Field(
             it.tile = t
             it.segment = null
         }
-        clickedSelectorColors.clear()
+        blot.filter { it.baseTile == oldTile }.forEach { it.baseTile = t }
         planTracks()
     }
 
@@ -364,5 +364,10 @@ class Field(
         val fTile = flatTile
         return fTile.filter { it.segment.any { s -> s.color.any { c -> c != 0 } } }.ifEmpty { fTile }.random().coord
     }
+
+    /**
+     * Are there no more selectable selectors
+     */
+    fun noMoreSelectors(): Boolean = openSelector.isEmpty()
 
 }

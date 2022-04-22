@@ -6,6 +6,7 @@ import com.andrzejn.xodus.helper.TW_POS_XY
 import com.andrzejn.xodus.logic.Coord
 import com.andrzejn.xodus.logic.Field
 import com.andrzejn.xodus.logic.Tile
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Gdx.graphics
 import com.badlogic.gdx.Gdx.input
 import com.badlogic.gdx.Input
@@ -104,9 +105,15 @@ class GameScreen(
 
     private val chaos = Sprite(ctx.chaos)
     private val logo = Sprite(ctx.logo).apply { setAlpha(0.5f) }
+    private val play = Sprite(ctx.play).apply { setAlpha(0.8f) }
+    private val help = Sprite(ctx.help).apply { setAlpha(0.8f) }
+    private val ok = Sprite(ctx.ok).apply { setAlpha(0.8f) }
+    private val settings = Sprite(ctx.settings).apply { setAlpha(0.8f) }
+    private val exit = Sprite(ctx.exit).apply { setAlpha(0.8f) }
 
     init {
         ctx.setTheme()
+        println("Init")
         newGame(false)
     }
 
@@ -126,9 +133,13 @@ class GameScreen(
             // Something wrong. Just recreate new World and start new game
             //world = World(ctx)
         }
-        else field = Field(ctx).apply {
-            newGame()
-            setSideLen(sideLen) { t -> setTileBasePos(t.coord, t.basePos) }
+        else {
+            println("New game")
+            field = Field(ctx).apply {
+                newGame()
+                setSideLen(sideLen) { t -> setTileBasePos(t.coord, t.basePos) }
+            }
+            createNewTile()
         }
     }
 
@@ -185,6 +196,7 @@ class GameScreen(
      * Handles window resizing
      */
     override fun resize(width: Int, height: Int) {
+        println("Resize to $width $height")
         super.resize(width, height)
         ctx.setCamera(width, height)
 
@@ -205,9 +217,22 @@ class GameScreen(
         basePos.set((width - wholeFieldSize) / 2, (height - wholeFieldSize) / 2)
         field.setSideLen(sideLen) { setTileBasePos(it.coord, it.basePos) }
         newTile?.setSideLen(sideLen)
+        newTile?.setDefaultNewTileBasePos()
+        floatingTile.tile = newTile
         chaos.setSize(sideLen * 1.8f, sideLen * 1.8f)
         chaos.setCenter(chaosPos.x, chaosPos.y)
         logo.setPosition(0f, height - logo.height)
+        val offset = sideLen * 0.1f
+        val buttonSize = sideLen * 0.8f
+        play.setBounds(offset, sideLen + offset, buttonSize, buttonSize)
+        help.setBounds(offset, offset, buttonSize, buttonSize)
+        settings.setBounds(width - sideLen + offset, sideLen + offset, buttonSize, buttonSize)
+        exit.setBounds(width - sideLen + offset, offset, buttonSize, buttonSize)
+        if (width > height)
+            ok.setPosition(newTilePos.x - sideLen / 2, newTilePos.y + sideLen)
+        else
+            ok.setPosition(newTilePos.x + sideLen, newTilePos.y - sideLen / 2)
+        ok.setSize(sideLen, sideLen)
     }
 
     /**
@@ -300,6 +325,11 @@ class GameScreen(
         ctx.sd.setColor(ctx.theme.settingSeparator)
         ctx.sd.circle(newTilePos.x, newTilePos.y, sideLen * 0.9f, 1f)
         floatingTile.render()
+        play.draw(ctx.batch)
+        help.draw(ctx.batch)
+        settings.draw(ctx.batch)
+        exit.draw(ctx.batch)
+        ok.draw(ctx.batch)
         if (ctx.batch.isDrawing) ctx.batch.end()
     }
 
@@ -332,36 +362,37 @@ class GameScreen(
      */
     private fun setSelectorOrPutNewTileAt(v: Vector2) {
         val nT = newTile
-        if (nT == null) {
-            if (field.selectorsHitTest(v))
-                createNewTile()
+        if (field.selectorsHitTest(v)) {
+            if (nT == null && field.noMoreSelectors())
+                fateMoves()
+            return
+        }
+        if (nT == null) return
+        val coord = v.toScreenCell()
+        if (coord.isNotSet()) {
+            inAnimation = true
+            v.set(newTilePos).sub(sideLen / 2f, sideLen / 2f)
+            Tween.to(floatingTile, TW_POS_XY, 0.1f).target(v.x, v.y)
+                .setCallback { _, _ ->
+                    nT.setDefaultNewTileBasePos()
+                    inAnimation = false
+                }
+                .start(ctx.tweenManager)
         } else {
-            val coord = v.toScreenCell()
-            if (coord.isNotSet()) {
-                inAnimation = true
-                v.set(newTilePos).sub(sideLen / 2f, sideLen / 2f)
-                Tween.to(floatingTile, TW_POS_XY, 0.1f).target(v.x, v.y)
-                    .setCallback { _, _ ->
-                        nT.setDefaultNewTileBasePos()
-                        inAnimation = false
-                    }
-                    .start(ctx.tweenManager)
-            } else {
-                inAnimation = true
-                v.set(coord.toScreenCellCorner())
-                coord.screenCellToFieldTile()
-                val (x, y) = coord.x to coord.y // Split to local variables to avoid side evvects from reusing class
-                // properties for coord translations in subsequent render() calls
-                Tween.to(floatingTile, TW_POS_XY, 0.3f).target(v.x, v.y)
-                    .setCallback { _, _ ->
-                        field.putTile(nT, x, y)
-                        newTile = null
-                        floatingTile.tile = null
-                        inAnimation = false
-                        chaosMove(ctx.gs.chaosMoves)
-                    }
-                    .start(ctx.tweenManager)
-            }
+            inAnimation = true
+            v.set(coord.toScreenCellCorner())
+            coord.screenCellToFieldTile()
+            val (x, y) = coord.x to coord.y // Split to local variables to avoid side evvects from reusing class
+            // properties for coord translations in subsequent render() calls
+            Tween.to(floatingTile, TW_POS_XY, 0.3f).target(v.x, v.y)
+                .setCallback { _, _ ->
+                    field.putTile(nT, x, y)
+                    newTile = null
+                    floatingTile.tile = null
+                    inAnimation = false
+                    if (field.noMoreSelectors()) fateMoves()
+                }
+                .start(ctx.tweenManager)
         }
     }
 
@@ -369,6 +400,7 @@ class GameScreen(
      * Creates new tile and prepares it to show at the newTilePos
      */
     private fun createNewTile() {
+        println("createNewTile()")
         newTile = Tile().apply {
             setSideLen(this@GameScreen.sideLen)
             setDefaultNewTileBasePos()
@@ -379,14 +411,17 @@ class GameScreen(
     /**
      * Set default new tile position in the circle
      */
-    private fun Tile.setDefaultNewTileBasePos() = basePos.set(newTilePos).sub(sideLen / 2f, sideLen / 2f)
+    private fun Tile.setDefaultNewTileBasePos() {
+        basePos.set(newTilePos).sub(sideLen / 2f, sideLen / 2f)
+        println("Tile.basePos = ${basePos.x} ${basePos.y}")
+    }
 
     /**
      * Find a position for the Chaos move, create and put the tile there.
      */
     private fun chaosMove(move: Int) {
         if (move <= 0) {
-            field.advanceBalls { createNewTile() }
+            createNewTile()
             return
         }
         val t = Tile().apply {
@@ -407,6 +442,14 @@ class GameScreen(
                 chaosMove(move - 1)
             }
             .start(ctx.tweenManager)
+    }
+
+    /**
+     * End of player's turn. Do Shredder and Chaos moves.
+     */
+    private fun fateMoves() {
+        //TODO Shredder move
+        field.advanceBalls { chaosMove(ctx.gs.chaosMoves) }
     }
 
     /**
@@ -454,20 +497,33 @@ class GameScreen(
         override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
             if (inAnimation)
                 return super.touchDragged(screenX, screenY, pointer)
-            if (button == Input.Buttons.RIGHT) { // For temporary testing. TODO Remove it before release
-                newGame(false)
-                return super.touchUp(screenX, screenY, pointer, button)
+            if (button == Input.Buttons.RIGHT) { // Right click (on desktop)
+                fateMoves()
+                return super.touchDragged(screenX, screenY, pointer)
             }
-            if (dragFrom == DragSource.None || dragFrom == DragSource.NewTile || dragStart.dst(dragPos) < 4)
-            // The last condition is a safeguard against clicks with minor pointer slides that are erroneously
-            // interpreted as drags
-                setSelectorOrPutNewTileAt(ctx.pointerPosition(screenX, screenY))
+            val v = ctx.pointerPosition(screenX, screenY)
+            when {
+                buttonTouched(v, play) -> newGame(false)
+                buttonTouched(v, exit) -> Gdx.app.exit()
+                buttonTouched(v, settings) -> ctx.game.setScreen<HomeScreen>()
+                buttonTouched(v, ok) -> fateMoves()
+                //buttonTouched(v, help) -> //TODO Automove
+                else -> if (dragFrom == DragSource.None || dragFrom == DragSource.NewTile || dragStart.dst(dragPos) < 4)
+                // The last condition is a safeguard against clicks with minor pointer slides that are erroneously
+                // interpreted as drags
+                    setSelectorOrPutNewTileAt(v)
+            }
             cellDragOrigin.unSet()
             dragPos.set(Vector2.Zero)
             dragFrom = DragSource.None
             newTile?.setDefaultNewTileBasePos()
             return super.touchUp(screenX, screenY, pointer, button)
         }
+
+        /**
+         * Checks if particular button is touched.
+         */
+        private fun buttonTouched(v: Vector2, s: Sprite) = v.x in s.x..s.x + s.width && v.y in s.y..s.y + s.height
 
     }
 
