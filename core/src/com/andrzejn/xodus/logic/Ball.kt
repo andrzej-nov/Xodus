@@ -82,6 +82,12 @@ class Ball(
     )
 
     /**
+     * Current ball position, relative to the tile.basePos, multiply it to sideLen before use.
+     */
+    val currentPosition: Vector2
+        get() = segment?.coordinatesOf(this) ?: v.set(sideMiddle[movingFromSide]!!).scl(sideLen)
+
+    /**
      * Value for internal calculations to reduce GC load
      */
     private val v = Vector2()
@@ -91,18 +97,16 @@ class Ball(
      * Render the ball
      */
     fun render(ctx: Context) {
-        val s = segment
-        (if (s != null) v.set(s.coordinatesOf(this)) else v.set(sideMiddle[movingFromSide])
-            .scl(sideLen)).add(tile.basePos)
+        v.set(currentPosition).add(tile.basePos)
         ctx.sd.filledCircle(v, outerRadius, ctx.theme.dark[color])
         ctx.sd.filledCircle(v, innerRadius, ctx.theme.light[color])
         v2.set(innerRadius * 2f / 3, innerRadius / 3f).rotateRad(
-            s?.directionAngleFor(this) ?: (directionAngle[movingFromSide]
+            segment?.directionAngleFor(this) ?: (directionAngle[movingFromSide]
                 ?: return)
         ).add(v)
         ctx.sd.filledCircle(v2, innerRadius / 6f, ctx.theme.eyeColor)
         v2.set(innerRadius * 2f / 3, -innerRadius / 3f).rotateRad(
-            s?.directionAngleFor(this) ?: (directionAngle[movingFromSide]
+            segment?.directionAngleFor(this) ?: (directionAngle[movingFromSide]
                 ?: return)
         ).add(v)
         ctx.sd.filledCircle(v2, innerRadius / 6f, ctx.theme.eyeColor)

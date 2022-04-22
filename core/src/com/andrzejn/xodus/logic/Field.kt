@@ -47,6 +47,14 @@ class Field(
      */
     private val clickedSelectorColors = mutableListOf<Int>()
 
+    /**
+     * Blots on the field. Fading out at the end of each move. Blots with alpha<=0 should be removed.
+     */
+    private val blot = mutableListOf<Blot>()
+
+    /**
+     * Cell side length, for scaling on render
+     */
     private var sideLen: Float = 0f
 
     /**
@@ -239,16 +247,22 @@ class Field(
                 ball.forEach { advanceToNextTile(it) }
                 ballPosition = 0f
                 killBalls(collided(ball))
-                //TODO if ball.isEmpty then trigger endgame
                 planTracks()
                 if (openSelector.isEmpty()) callback()
             }
             .start(ctx.tweenManager)
+        blot.forEach { it.fade() }
+        blot.removeIf { it.alpha <= 0 }
     }
 
     private fun killBalls(collisions: List<Ball>) {
+        if (collisions.isEmpty())
+            return
+        println("Killed balls ${collisions.forEach { it.color }}")
         deadBall.addAll(collisions)
         ball.removeAll(collisions)
+        collisions.distinct().forEach { blot.add(Blot(ctx, it.color, it.tile, it.currentPosition)) }
+        //TODO if ball.isEmpty then trigger endgame
     }
 
     /**
@@ -296,17 +310,18 @@ class Field(
      * Render everything on the field
      */
     fun render() {
+        blot.forEach { it.render() }
         applyToAllTiles { it.render(ctx) }
+        val ballsToClear = mutableListOf<Ball>()
         ball.forEach {
             it.position = ballPosition
             it.render(ctx)
             if (ballPosition >= 0.5f && it in ballsOnCollisionCourse) {
-                deadBall.add(it)
                 ballsOnCollisionCourse.remove(it)
-                ball.remove(it)
-                // TODO Start blotting animation
+                ballsToClear.add(it)
             }
         }
+        killBalls(ballsToClear)
         openSelector.forEach { it.render(ctx) }
     }
 

@@ -276,14 +276,12 @@ class GameScreen(
      */
     override fun render(delta: Float) {
         super.render(delta)
-        try {
-            // Here the Tween Engine updates all our respective object fields when any tween animation is requested
-            ctx.tweenManager.update(if (graphics.isContinuousRendering) delta else 0.01f)
-            graphics.isContinuousRendering = ctx.tweenAnimationRunning()
-        } catch (ex: Exception) {
-            // There should be no exceptions here. But if they are, simply restart the game.
-            newGame(false)
-        }
+
+        // Here the Tween Engine updates all our respective object fields when any tween animation is requested
+        ctx.tweenManager.update(if (graphics.isContinuousRendering) delta else 0.01f)
+        // Hack to enable continuous rendering only when it is needed
+        graphics.isContinuousRendering = ctx.tweenAnimationRunning()
+
         with(ctx.theme.screenBackground) {
             clearScreen(r, g, b, a, true)
         }

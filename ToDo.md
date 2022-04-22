@@ -1,9 +1,7 @@
 ### Simple project TODO list
 
-- [x] After placing the tiles, advance balls, kill collided ones and replan tracks
-- [x] Add move animations
 - [x] Add ball eyes
-- [ ] Add blots
+- [x] Add blots
 - [ ] Add "Proceed to next move" button
 - [ ] Rearrange order of moves: balls and schredder advance - chaos moves - create next tile
 - [ ] Create next tile at once when the prior one has been placed. Allow selector clicks ant tile put in any order.
