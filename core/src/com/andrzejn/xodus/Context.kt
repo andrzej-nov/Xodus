@@ -131,9 +131,9 @@ class Context(
     fun clipWrap(x: Float): Float {
         val fieldSize = gs.fieldSize
         if (x < 0)
-            return x + (floor(-(x + 1) / fieldSize) + 1) * fieldSize
+            return x + ((-(x + 1) / fieldSize).toInt() + 1) * fieldSize
         if (x >= fieldSize)
-            return x - floor(x / fieldSize) * fieldSize
+            return x - (x / fieldSize).toInt() * fieldSize
         return x
     }
 

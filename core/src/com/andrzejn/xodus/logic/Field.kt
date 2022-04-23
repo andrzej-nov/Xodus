@@ -242,6 +242,21 @@ class Field(
         ballsOnCollisionCourse.addAll(onCollisionCourse(ball))
         ballPosition = 0f
         ball.forEach { it.segment = segmentFromTileSide(it) }
+        if (deadBall.isNotEmpty() && ctx.gs.reincarnation) {
+            val currentBallSegments = ball.mapNotNull { it.segment }
+            ball.fold(mutableListOf<Pair<Side, TrackSegment>>()) { l, b ->
+                l.addAll(b.tile.segment.filter { s ->
+                    s.type.sides.contains(b.movingFromSide) && s.color.all { it == 0 } && s !in currentBallSegments
+                }.map { b.movingFromSide to it })
+                l
+            }.shuffled().zip(deadBall).forEach { (ss, b) ->
+                b.movingFromSide = ss.first
+                b.segment = ss.second
+                b.tile = ss.second.tile
+                ball.add(b)
+                deadBall.remove(b)
+            }
+        }
         blot.forEach { it.fade() }
         blot.removeIf { it.alpha <= 0 }
         Tween.to(this, TW_POSITION, 1f).target(1f)
@@ -295,6 +310,9 @@ class Field(
         } to currentSide.otherSide
     }
 
+    /**
+     * Picks nearest matching segment for the ball move, if it is defined.
+     */
     private fun segmentFromTileSide(ball: Ball): TrackSegment? {
         with(ball.tile.intent[ball.movingFromSide.ordinal]) {
             return intentSegment ?: (if (selectorColor == ball.color) selectorSegment else null)

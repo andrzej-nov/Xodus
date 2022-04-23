@@ -170,7 +170,7 @@ class HomeScreen(
      */
     private fun renderGameSettings() {
         var y = gridY * 3.05f
-        var x = gridX * ((if (ctx.gs.colorsCount == 6) 3f else 7f) - 0.2f) + baseX
+        var x = gridX * ((if (ctx.gs.reincarnation) 3f else 7f) - 0.2f) + baseX
         ctx.sd.filledRectangle(
             x,
             y,
@@ -209,9 +209,9 @@ class HomeScreen(
 
             if (v.y in 3 * gridY..4 * gridY) {
                 if (v.x in 3 * gridX..5 * gridX)
-                    ctx.gs.colorsCount = 6
+                    ctx.gs.reincarnation = true
                 else if (v.x in 7 * gridX..9 * gridX)
-                    ctx.gs.colorsCount = 7
+                    ctx.gs.reincarnation = false
             } else if (v.y in 2 * gridY..3 * gridY) {
                 if (v.x in 3 * gridX..5 * gridX) {
                     ctx.gs.isDarkTheme = true

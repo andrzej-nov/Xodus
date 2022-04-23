@@ -66,10 +66,13 @@ class Shredder(fieldSize: Int) {
     /**
      * Advance Shredder line by o.75 cell up during the move
      */
-    fun advance(ctx: Context) {
+    fun advance(ctx: Context, scrollUp: () -> Unit) {
         inAdvance = true
+        val prevY = y.toInt()
         Tween.to(this, TW_Y, 1f).target(y + 0.75f).setCallback { _, _ ->
             y = ctx.clipWrap(y)
+            if (y.toInt() != prevY)
+                scrollUp()
             inAdvance = false
         }.start(ctx.tweenManager)
     }

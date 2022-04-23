@@ -370,7 +370,7 @@ class GameScreen(
         val nT = newTile
         if (field.selectorsHitTest(v)) {
             if (nT == null && field.noMoreSelectors())
-                fateMoves()
+                endOfTurn()
             return
         }
         if (nT == null) return
@@ -396,7 +396,7 @@ class GameScreen(
                     newTile = null
                     floatingTile.tile = null
                     inAnimation = false
-                    if (field.noMoreSelectors()) fateMoves()
+                    if (field.noMoreSelectors()) endOfTurn()
                 }
                 .start(ctx.tweenManager)
         }
@@ -448,11 +448,13 @@ class GameScreen(
             .start(ctx.tweenManager)
     }
 
+    private val scrollUp = Coord(0, -1)
+
     /**
      * End of player's turn. Do Shredder and Chaos moves.
      */
-    private fun fateMoves() {
-        shredder.advance(ctx)
+    private fun endOfTurn() {
+        shredder.advance(ctx) { scrollFieldBy(scrollUp) }
         field.advanceBalls { chaosMove(ctx.gs.chaosMoves) }
     }
 
@@ -502,7 +504,7 @@ class GameScreen(
             if (inAnimation)
                 return super.touchDragged(screenX, screenY, pointer)
             if (button == Input.Buttons.RIGHT) { // Right click (on desktop)
-                fateMoves()
+                endOfTurn()
                 return super.touchDragged(screenX, screenY, pointer)
             }
             val v = ctx.pointerPosition(screenX, screenY)
@@ -510,7 +512,7 @@ class GameScreen(
                 buttonTouched(v, play) -> newGame(false)
                 buttonTouched(v, exit) -> Gdx.app.exit()
                 buttonTouched(v, settings) -> ctx.game.setScreen<HomeScreen>()
-                buttonTouched(v, ok) -> fateMoves()
+                buttonTouched(v, ok) -> endOfTurn()
                 //buttonTouched(v, help) -> //TODO Automove
                 else -> if (dragFrom == DragSource.None || dragFrom == DragSource.NewTile || dragStart.dst(dragPos) < 4)
                 // The last condition is a safeguard against clicks with minor pointer slides that are erroneously

@@ -9,7 +9,7 @@ class GameSettings {
     private val pref by lazy { Gdx.app.getPreferences("com.andrzejn.xodus") }
     private val sFIELDSIZE = "fieldSize"
     private val sCHAOSMOVES = "chaosMoves"
-    private val sCOLORSCOUNT = "colorsCount"
+    private val sREINCARNATION = "reincarnation"
     private val sSAVEDGAME = "savedGame"
     private val sDARKTHEME = "darkTheme"
     private val sINGAMEDURATION = "inGameDuration"
@@ -17,7 +17,7 @@ class GameSettings {
     private val sRECORDPOINTS = "recordPoints"
     private var iFieldSize: Int = 7
     private var iChaosMoves: Int = 1
-    private var iColorsCount: Int = 6
+    private var iReincarnation: Boolean = true
     private var iDarkTheme: Boolean = true
     private var iInGameDuration: Long = 0
 
@@ -31,9 +31,8 @@ class GameSettings {
         fieldSize = iFieldSize
         iChaosMoves = pref.getInteger(sCHAOSMOVES, 1).coerceIn(0..2)
         chaosMoves = iChaosMoves
-        iColorsCount = pref.getInteger(sCOLORSCOUNT, 6)
-        iColorsCount = iColorsCount.coerceIn(6, 7)
-        colorsCount = iColorsCount
+        iReincarnation = pref.getBoolean(sREINCARNATION, true)
+        reincarnation = iReincarnation
         iDarkTheme = pref.getBoolean(sDARKTHEME, true)
         iInGameDuration = pref.getLong(sINGAMEDURATION, 0)
     }
@@ -63,11 +62,11 @@ class GameSettings {
     /**
      * Number of different colors used for ball sockets. 6..7
      */
-    var colorsCount: Int
-        get() = iColorsCount
+    var reincarnation: Boolean
+        get() = iReincarnation
         set(value) {
-            iColorsCount = value
-            pref.putInteger(sCOLORSCOUNT, value)
+            iReincarnation = value
+            pref.putBoolean(sREINCARNATION, value)
             pref.flush()
         }
 
@@ -107,7 +106,7 @@ class GameSettings {
      * Key name for storing the records for the current tile type - game size - colors
      */
     private fun keyName(prefix: String): String {
-        return "$prefix$iChaosMoves$iColorsCount$iFieldSize}"
+        return "$prefix$iChaosMoves$iFieldSize$iReincarnation}"
     }
 
     /**
@@ -134,7 +133,7 @@ class GameSettings {
      * Serialize game settings, to include into the saved game. Always 6 characters.
      */
     fun serialize(sb: com.badlogic.gdx.utils.StringBuilder) {
-        sb.append(iFieldSize, 2).append(chaosMoves).append(colorsCount)
+        sb.append(iFieldSize, 2).append(chaosMoves).append(if (reincarnation) 1 else 0)
     }
 
     /**
@@ -146,19 +145,17 @@ class GameSettings {
             return false
         }
         val fv = s.substring(0..1).toIntOrNull()
-
-        val bc = s.substring(3..4).toIntOrNull()
-        val cc = s[5].digitToIntOrNull()
+        val cm = s[2].digitToIntOrNull()
+        val r = s[3] != '0'
         if ((fv == null || fv !in listOf(5, 7, 9, 11))
-            || bc == null || bc !in 20..60
-            || cc == null || cc !in 6..7
+            || cm == null || cm !in 0..2
         ) {
             reset()
             return false
         }
         fieldSize = fv
-        chaosMoves = bc
-        colorsCount = cc
+        chaosMoves = cm
+        reincarnation = r
         return true
     }
 }
