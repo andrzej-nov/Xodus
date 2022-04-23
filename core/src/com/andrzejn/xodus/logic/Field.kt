@@ -352,6 +352,7 @@ class Field(
         ball.filter { it.tile == oldTile }.forEach {
             it.tile = t
             it.segment = null
+            clickedSelectorColors.remove(it.color)
         }
         blot.filter { it.baseTile == oldTile }.forEach { it.baseTile = t }
         planTracks()
@@ -362,7 +363,9 @@ class Field(
      */
     fun chaosTileCoord(): Coord {
         val fTile = flatTile
-        return fTile.filter { it.segment.any { s -> s.color.any { c -> c != 0 } } }.ifEmpty { fTile }.random().coord
+        return fTile.filter { it.segment.any { s -> s.color.any { c -> c != 0 } } }
+            .ifEmpty { ball.map { it.tile } }
+            .ifEmpty { fTile }.random().coord
     }
 
     /**

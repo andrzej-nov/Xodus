@@ -64,11 +64,11 @@ class Shredder(fieldSize: Int) {
     }
 
     /**
-     * Advance Shredder line by o.5 cell up during the move
+     * Advance Shredder line by o.75 cell up during the move
      */
     fun advance(ctx: Context) {
         inAdvance = true
-        Tween.to(this, TW_Y, 1f).target(y + 0.5f).setCallback { _, _ ->
+        Tween.to(this, TW_Y, 1f).target(y + 0.75f).setCallback { _, _ ->
             y = ctx.clipWrap(y)
             inAdvance = false
         }.start(ctx.tweenManager)
