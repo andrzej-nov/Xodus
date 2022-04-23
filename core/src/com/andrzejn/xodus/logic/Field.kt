@@ -370,4 +370,9 @@ class Field(
      */
     fun noMoreSelectors(): Boolean = openSelector.isEmpty()
 
+    /**
+     * Kill shredded balls
+     */
+    fun shredBalls(shredded: (List<Ball>) -> List<Ball>): Unit = killBalls(shredded(ball))
+
 }

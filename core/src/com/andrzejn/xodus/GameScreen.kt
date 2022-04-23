@@ -5,6 +5,7 @@ import com.andrzejn.xodus.helper.FloatingTile
 import com.andrzejn.xodus.helper.TW_POS_XY
 import com.andrzejn.xodus.logic.Coord
 import com.andrzejn.xodus.logic.Field
+import com.andrzejn.xodus.logic.Shredder
 import com.andrzejn.xodus.logic.Tile
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Gdx.graphics
@@ -103,6 +104,11 @@ class GameScreen(
      */
     private var floatingTile = FloatingTile(ctx)
 
+    /**
+     * The shredder line
+     */
+    private lateinit var shredder: Shredder
+
     private val chaos = Sprite(ctx.chaos)
     private val logo = Sprite(ctx.logo).apply { setAlpha(0.5f) }
     private val play = Sprite(ctx.play).apply { setAlpha(0.8f) }
@@ -113,7 +119,6 @@ class GameScreen(
 
     init {
         ctx.setTheme()
-        println("Init")
         newGame(false)
     }
 
@@ -125,6 +130,7 @@ class GameScreen(
         updateInGameDuration()
         timeStart = Calendar.getInstance().timeInMillis
         scrollOffset.set(0, 0)
+        shredder = Shredder(ctx.gs.fieldSize)
         if (loadSavedGame) try {
             val s = ctx.sav.savedGame()
             ctx.sav.loadSettingsAndScore(s)
@@ -134,7 +140,6 @@ class GameScreen(
             //world = World(ctx)
         }
         else {
-            println("New game")
             field = Field(ctx).apply {
                 newGame()
                 setSideLen(sideLen) { t -> setTileBasePos(t.coord, t.basePos) }
@@ -196,7 +201,6 @@ class GameScreen(
      * Handles window resizing
      */
     override fun resize(width: Int, height: Int) {
-        println("Resize to $width $height")
         super.resize(width, height)
         ctx.setCamera(width, height)
 
@@ -317,7 +321,9 @@ class GameScreen(
         if (c.isSet())
             ctx.sd.filledRectangle(v.x, v.y, sideLen, sideLen, ctx.theme.cellHilight)
         renderFieldGrid()
+        field.shredBalls { shredder.shreddedBalls(it) }
         field.render()
+        shredder.render(ctx, basePos.x, basePos.y + ctx.clipWrap(shredder.y + scrollOffset.y) * sideLen, wholeFieldSize)
         logo.draw(ctx.batch)
         chaos.draw(ctx.batch)
         ctx.sd.setColor(ctx.theme.gameboardBackground)
@@ -400,7 +406,6 @@ class GameScreen(
      * Creates new tile and prepares it to show at the newTilePos
      */
     private fun createNewTile() {
-        println("createNewTile()")
         newTile = Tile().apply {
             setSideLen(this@GameScreen.sideLen)
             setDefaultNewTileBasePos()
@@ -413,7 +418,6 @@ class GameScreen(
      */
     private fun Tile.setDefaultNewTileBasePos() {
         basePos.set(newTilePos).sub(sideLen / 2f, sideLen / 2f)
-        println("Tile.basePos = ${basePos.x} ${basePos.y}")
     }
 
     /**
@@ -448,7 +452,7 @@ class GameScreen(
      * End of player's turn. Do Shredder and Chaos moves.
      */
     private fun fateMoves() {
-        //TODO Shredder move
+        shredder.advance(ctx)
         field.advanceBalls { chaosMove(ctx.gs.chaosMoves) }
     }
 

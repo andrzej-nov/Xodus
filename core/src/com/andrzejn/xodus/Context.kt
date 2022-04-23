@@ -5,6 +5,7 @@ import aurelienribon.tweenengine.TweenManager
 import com.andrzejn.xodus.helper.*
 import com.andrzejn.xodus.logic.Blot
 import com.andrzejn.xodus.logic.Field
+import com.andrzejn.xodus.logic.Shredder
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.assets.loaders.TextureAtlasLoader
@@ -19,6 +20,7 @@ import com.badlogic.gdx.math.Vector3
 import ktx.assets.Asset
 import ktx.assets.loadOnDemand
 import space.earlygrey.shapedrawer.ShapeDrawer
+import kotlin.math.floor
 
 /**
  * Holds all application-wide objects.
@@ -72,6 +74,7 @@ class Context(
         Tween.registerAccessor(FloatingTile::class.java, FloatingTileAccessor())
         Tween.registerAccessor(Field::class.java, FieldAccessor())
         Tween.registerAccessor(Blot::class.java, BlotAccessor())
+        Tween.registerAccessor(Shredder::class.java, ShredderAccessor())
     }
 
     /**
@@ -120,6 +123,18 @@ class Context(
         if (c >= fieldSize)
             return c - (c / fieldSize) * fieldSize
         return c
+    }
+
+    /**
+     * Ensures the float index is within (0  until fieldSize), wrapping through another side as necessary.
+     */
+    fun clipWrap(x: Float): Float {
+        val fieldSize = gs.fieldSize
+        if (x < 0)
+            return x + (floor(-(x + 1) / fieldSize) + 1) * fieldSize
+        if (x >= fieldSize)
+            return x - floor(x / fieldSize) * fieldSize
+        return x
     }
 
     /**
@@ -242,8 +257,9 @@ class Context(
         val dark: Array<Color>,
         val eyeColor: Color,
         val gameBorders: Color,
-        val ballColor: Color,
-        val cellHilight: Color
+        val cellHilight: Color,
+        val shredderYellow: Color,
+        val shredderRed: Color
     )
 
     private val lt: Theme = Theme(
@@ -259,8 +275,9 @@ class Context(
         dark = this.light,
         eyeColor = Color.BLACK,
         gameBorders = Color.GRAY,
-        ballColor = Color.WHITE,
-        cellHilight = Color.DARK_GRAY
+        cellHilight = Color.DARK_GRAY,
+        shredderYellow = Color.GOLDENROD,
+        shredderRed = Color.FIREBRICK
     )
 
     private val dk: Theme = Theme(
@@ -276,8 +293,9 @@ class Context(
         dark = this.dark,
         eyeColor = Color.DARK_GRAY,
         gameBorders = Color.DARK_GRAY,
-        ballColor = Color.GRAY,
-        cellHilight = Color.LIGHT_GRAY
+        cellHilight = Color.LIGHT_GRAY,
+        shredderYellow = Color.GOLD,
+        shredderRed = Color.RED
     )
 
     /**

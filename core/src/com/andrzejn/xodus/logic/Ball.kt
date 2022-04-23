@@ -82,7 +82,13 @@ class Ball(
     )
 
     /**
-     * Current ball position, relative to the tile.basePos, multiply it to sideLen before use.
+     * Current ball Y position, relative to the field bottom-left corner, in cells
+     */
+    val currentY: Float
+        get() = currentPosition.y / sideLen + tile.coord.y
+
+    /**
+     * Current ball position, relative to the tile.basePos
      */
     val currentPosition: Vector2
         get() = segment?.coordinatesOf(this) ?: v.set(sideMiddle[movingFromSide]!!).scl(sideLen)

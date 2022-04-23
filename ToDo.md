@@ -1,11 +1,6 @@
 ### Simple project TODO list
 
-- [x] Add ball eyes
-- [x] Add blots
-- [x] Add "Proceed to next move" button and other contol buttons
-- [x] Rearrange order of moves: balls and schredder advance - chaos moves - create next tile
-- [ ] Add the Shredder line
-- [ ] Create next tile at once when the prior one has been placed. Allow selector clicks and tile putting in any order.
+- [x] Add the Shredder line
 - [ ] Add the "Die/Reincarnate" settings switch
 - [ ] Process reincarnation on track forks
 - [ ] End game when no balls left
