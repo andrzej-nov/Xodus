@@ -90,7 +90,7 @@ class Score(
     /**
      * Set font size and text positions for the current window size
      */
-    fun setCoords(fontHeight: Int) {
+    fun setCoords(fontHeight: Int, sideLen: Float, width: Float) {
         if (this.fontHeight != fontHeight) {
             if (this::font.isInitialized) // Check if lateinit property has been initialized
                 font.dispose()
@@ -100,9 +100,9 @@ class Score(
             fcMoves = BitmapFontCache(font)
         }
         textY = fontHeight.toFloat()
-        textMovesX = 5f
+        textMovesX = sideLen * 1.5f
         textWidth = 5f * fontHeight
-        textPointsX = ctx.camera.viewportWidth - textWidth - 5f
+        textPointsX = width - sideLen * 1.5f - textWidth - 5f
         setTexts()
     }
 
@@ -150,7 +150,7 @@ class Score(
      */
     private fun setPointsText() {
         fcPoints.setText(
-            points.toString() + if (points > recordPoints) " !" else "",
+            (-points).toString() + if (points > recordPoints) " !" else "",
             textPointsX,
             textY,
             textWidth,

@@ -145,15 +145,13 @@ class Field(
                     b.movingFromSide
                 )
             ) { first.intent[second.ordinal] }.intentSideColor != 0
-        ) return true
-        // This side is already included into some planned track. Proceed no further.
+        ) return true // This side is already included into some planned track. Proceed no further.
         sideIntent.intentSideColor = b.color
         sideIntent.trackStep = step
         if (b.segment != null) // The ball already knows its direction. Record it to the intent.
             sideIntent.intentSegment = b.segment
-        else if (sideIntent.intentSegment != null)
-        // The side already has the (only one possible) direction intent. Use it.
-            b.segment = sideIntent.intentSegment
+        else if (sideIntent.intentSegment != null) // The side already has the (only one possible) direction intent.
+            b.segment = sideIntent.intentSegment // Use it.
         else { // Default intent checks are over. Check the selector.
             if (sideIntent.selectorColor != b.color) {
                 // The selector was not set or was set for another ball, but plans have changed now
@@ -277,6 +275,7 @@ class Field(
     private fun killBalls(collisions: List<Ball>) {
         if (collisions.isEmpty())
             return
+        ctx.score.addPoints(collisions.distinct().size)
         deadBall.addAll(collisions)
         ball.removeAll(collisions)
         collisions.distinct().forEach { blot.add(Blot(ctx, it.color, it.tile, it.currentPosition)) }

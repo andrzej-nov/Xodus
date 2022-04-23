@@ -239,6 +239,7 @@ class GameScreen(
         else
             ok.setPosition(newTilePos.x + sideLen, newTilePos.y - sideLen / 2)
         ok.setSize(sideLen, sideLen)
+        ctx.score.setCoords((sideLen / 2).toInt(), sideLen, width.toFloat())
     }
 
     /**
@@ -341,6 +342,7 @@ class GameScreen(
         settings.draw(ctx.batch)
         exit.draw(ctx.batch)
         ok.draw(ctx.batch)
+        ctx.score.draw(ctx.batch)
         if (ctx.batch.isDrawing) ctx.batch.end()
     }
 
@@ -461,6 +463,7 @@ class GameScreen(
     private fun endOfTurn() {
         if (field.noMoreBalls())
             return
+        ctx.score.incrementMoves()
         shredder.advance(ctx) { scrollFieldBy(scrollUp) }
         field.advanceBalls { chaosMove(ctx.gs.chaosMoves) }
     }
