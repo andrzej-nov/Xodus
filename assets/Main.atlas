@@ -114,3 +114,13 @@ sizearrows
    xy: 0, 880
    size: 136,136
    index: -1
+resume
+  rotate: false
+  xy: 150, 880
+  size: 100, 100
+  index: -1
+playblue
+  rotate: false
+  xy: 260, 880
+  size: 100, 100
+  index: -1

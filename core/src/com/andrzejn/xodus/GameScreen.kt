@@ -112,6 +112,7 @@ class GameScreen(
     private val chaos = Sprite(ctx.chaos)
     private val logo = Sprite(ctx.logo).apply { setAlpha(0.5f) }
     private val play = Sprite(ctx.play).apply { setAlpha(0.8f) }
+    private val playblue = Sprite(ctx.playblue).apply { setAlpha(0.8f) }
     private val help = Sprite(ctx.help).apply { setAlpha(0.8f) }
     private val ok = Sprite(ctx.ok).apply { setAlpha(0.8f) }
     private val settings = Sprite(ctx.settings).apply { setAlpha(0.8f) }
@@ -229,6 +230,7 @@ class GameScreen(
         val offset = sideLen * 0.1f
         val buttonSize = sideLen * 0.8f
         play.setBounds(offset, sideLen + offset, buttonSize, buttonSize)
+        playblue.setBounds(offset, sideLen + offset, buttonSize, buttonSize)
         help.setBounds(offset, offset, buttonSize, buttonSize)
         settings.setBounds(width - sideLen + offset, sideLen + offset, buttonSize, buttonSize)
         exit.setBounds(width - sideLen + offset, offset, buttonSize, buttonSize)
@@ -331,7 +333,10 @@ class GameScreen(
         ctx.sd.setColor(ctx.theme.settingSeparator)
         ctx.sd.circle(newTilePos.x, newTilePos.y, sideLen * 0.9f, 1f)
         floatingTile.render()
-        play.draw(ctx.batch)
+        if (field.noMoreBalls())
+            play.draw(ctx.batch)
+        else
+            playblue.draw(ctx.batch)
         help.draw(ctx.batch)
         settings.draw(ctx.batch)
         exit.draw(ctx.batch)
@@ -454,6 +459,8 @@ class GameScreen(
      * End of player's turn. Do Shredder and Chaos moves.
      */
     private fun endOfTurn() {
+        if (field.noMoreBalls())
+            return
         shredder.advance(ctx) { scrollFieldBy(scrollUp) }
         field.advanceBalls { chaosMove(ctx.gs.chaosMoves) }
     }

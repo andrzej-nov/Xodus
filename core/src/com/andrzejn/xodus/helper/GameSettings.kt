@@ -26,8 +26,8 @@ class GameSettings {
      */
     fun reset() {
         iFieldSize = pref.getInteger(sFIELDSIZE, 7)
-        if (iFieldSize !in listOf(7, 9, 11, 13))
-            iFieldSize = 9
+        if (iFieldSize !in listOf(7, 9, 11))
+            iFieldSize = 7
         fieldSize = iFieldSize
         iChaosMoves = pref.getInteger(sCHAOSMOVES, 1).coerceIn(0..2)
         chaosMoves = iChaosMoves

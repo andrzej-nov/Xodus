@@ -271,14 +271,21 @@ class Field(
             .start(ctx.tweenManager)
     }
 
+    /**
+     * Kill specified balls
+     */
     private fun killBalls(collisions: List<Ball>) {
         if (collisions.isEmpty())
             return
         deadBall.addAll(collisions)
         ball.removeAll(collisions)
         collisions.distinct().forEach { blot.add(Blot(ctx, it.color, it.tile, it.currentPosition)) }
-        //TODO if ball.isEmpty then trigger endgame
     }
+
+    /**
+     * Kill shredded balls
+     */
+    fun shredBalls(shredded: (List<Ball>) -> List<Ball>): Unit = killBalls(shredded(ball))
 
     /**
      * Moves the ball to the beginning of next tile according to the segment direction.
@@ -392,8 +399,8 @@ class Field(
     fun noMoreSelectors(): Boolean = openSelector.isEmpty()
 
     /**
-     * Kill shredded balls
+     * Are there no more balls
      */
-    fun shredBalls(shredded: (List<Ball>) -> List<Ball>): Unit = killBalls(shredded(ball))
+    fun noMoreBalls(): Boolean = ball.isEmpty()
 
 }
