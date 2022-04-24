@@ -157,17 +157,6 @@ class GameScreen(
         timeStart = Calendar.getInstance().timeInMillis
     }
 
-    private var thereWasAMove = false
-
-    /**
-     * Autosaves the game every 5 seconds
-     */
-    private fun autoSaveGame() {
-        if (!thereWasAMove) return
-        ctx.sav.saveGame(/*world*/)
-        thereWasAMove = false
-    }
-
     /**
      * Invoked on the screen show. Continuous rendering is needed by this screen.
      */
@@ -290,17 +279,6 @@ class GameScreen(
         if (this.x !in basePos.x..basePos.x + wholeFieldSize || this.y !in basePos.y..basePos.y + wholeFieldSize)
             return c.unSet()
         return c.set(((this.x - basePos.x) / sideLen).toInt(), ((this.y - basePos.y) / sideLen).toInt())
-    }
-
-    /**
-     * Returns indexes of the logical field tile pointed by touch/mouse (-1, -1) of pointed otside of the field.
-     * Uses the same private var c as Vector2.toScreenCell()
-     * Sets private var c to the same return value
-     */
-    private fun Vector2.toFieldTile(): Coord {
-        if (this.toScreenCell().isNotSet())
-            return c
-        return c.screenCellToFieldTile()
     }
 
     /**
@@ -465,7 +443,15 @@ class GameScreen(
             return
         ctx.score.incrementMoves()
         shredder.advance(ctx) { scrollFieldBy(scrollUp) }
-        field.advanceBalls { chaosMove(ctx.gs.chaosMoves) }
+        field.advanceBalls({ chaosMove(ctx.gs.chaosMoves) }) { b -> shredder.currentBallDist(b) }
+    }
+
+    /**
+     * Show player a random move. Not the best one, and not always even a good one. Just a random one, to show
+     * the game controls.
+     */
+    private fun randomMove() {
+        TODO("Not yet implemented")
     }
 
     /**
@@ -523,7 +509,7 @@ class GameScreen(
                 buttonTouched(v, exit) -> Gdx.app.exit()
                 buttonTouched(v, settings) -> ctx.game.setScreen<HomeScreen>()
                 buttonTouched(v, ok) -> endOfTurn()
-                //buttonTouched(v, help) -> //TODO Automove
+                buttonTouched(v, help) -> randomMove()
                 else -> if (dragFrom == DragSource.None || dragFrom == DragSource.NewTile || dragStart.dst(dragPos) < 4)
                 // The last condition is a safeguard against clicks with minor pointer slides that are erroneously
                 // interpreted as drags

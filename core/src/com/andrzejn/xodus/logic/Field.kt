@@ -4,6 +4,7 @@ import aurelienribon.tweenengine.Tween
 import com.andrzejn.xodus.Context
 import com.andrzejn.xodus.helper.TW_POSITION
 import com.badlogic.gdx.math.Vector2
+import kotlin.math.abs
 
 /**
  * The playfield, with tiles, balls, tracks and logic
@@ -234,7 +235,7 @@ class Field(
     /**
      * Move balls by one position. Returns true if there are no open selectors to select and need to create new tile.
      */
-    fun advanceBalls(callback: () -> Unit) {
+    fun advanceBalls(thenProceedWithMoves: () -> Unit, distFromShredder: (List<Ball>) -> Map<Int, Float>) {
         killBalls(collided(ball))
         ballsOnCollisionCourse.clear()
         ballsOnCollisionCourse.addAll(onCollisionCourse(ball))
@@ -242,12 +243,14 @@ class Field(
         ball.forEach { it.segment = segmentFromTileSide(it) }
         if (deadBall.isNotEmpty() && ctx.gs.reincarnation) {
             val currentBallSegments = ball.mapNotNull { it.segment }
+            val dist = distFromShredder(ball)
             ball.fold(mutableListOf<Pair<Side, TrackSegment>>()) { l, b ->
                 l.addAll(b.tile.segment.filter { s ->
                     s.type.sides.contains(b.movingFromSide) && s.color.all { it == 0 } && s !in currentBallSegments
-                }.map { b.movingFromSide to it })
+                }.map { (b.movingFromSide to it) to abs(dist[b.color]!!) }.sortedByDescending { it.second }
+                    .map { it.first })
                 l
-            }.shuffled().zip(deadBall).forEach { (ss, b) ->
+            }.zip(deadBall).forEach { (ss, b) ->
                 b.movingFromSide = ss.first
                 b.segment = ss.second
                 b.tile = ss.second.tile
@@ -256,7 +259,7 @@ class Field(
             }
         }
         blot.forEach { it.fade() }
-        blot.removeIf { it.alpha <= 0 }
+        blot.removeAll(blot.filter { it.alpha <= 0 })
         Tween.to(this, TW_POSITION, 1f).target(1f)
             .setCallback { _, _ ->
                 ball.forEach { advanceToNextTile(it) }
@@ -264,7 +267,7 @@ class Field(
                 killBalls(collided(ball))
                 clickedSelectorColors.clear()
                 planTracks()
-                callback()
+                thenProceedWithMoves()
             }
             .start(ctx.tweenManager)
     }

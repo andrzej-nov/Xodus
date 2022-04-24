@@ -37,8 +37,8 @@ android {
         multiDexEnabled true
     }
     compileOptions {
-        sourceCompatibility '8.0'
-        targetCompatibility '8.0'
+        sourceCompatibility '1.8'
+        targetCompatibility '1.8'
         coreLibraryDesugaringEnabled true
     }
 	kotlinOptions.jvmTarget = '1.8'

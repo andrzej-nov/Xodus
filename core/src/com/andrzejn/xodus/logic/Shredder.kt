@@ -43,7 +43,7 @@ class Shredder(fieldSize: Int) {
     /**
      * Returns the map of ball colors to their distances to the Shredder line
      */
-    private fun currentBallDist(ball: List<Ball>): Map<Int, Float> =
+    fun currentBallDist(ball: List<Ball>): Map<Int, Float> =
         ball.associateBy({ it.color }, { wrapDist(it.currentY - y) })
 
     /**
