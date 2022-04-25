@@ -203,7 +203,7 @@ class Context(
      * Sets private var c to the same return value
      */
     fun toFieldIndex(v: Vector2): Coord {
-        if (v.x !in 0f..wholeFieldSize || v.y !in 0f..wholeFieldSize) return c.unSet()
+        if (v.x !in -sideLen..wholeFieldSize + sideLen || v.y !in -sideLen..wholeFieldSize + sideLen) return c.unSet()
         return c.set((v.x / sideLen).toInt(), (v.y / sideLen).toInt())
     }
 

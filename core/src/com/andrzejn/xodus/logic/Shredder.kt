@@ -2,7 +2,6 @@ package com.andrzejn.xodus.logic
 
 import aurelienribon.tweenengine.Timeline
 import aurelienribon.tweenengine.Tween
-import aurelienribon.tweenengine.TweenManager
 import com.andrzejn.xodus.Context
 import com.andrzejn.xodus.helper.TW_POS_XY
 import com.andrzejn.xodus.helper.TW_Y
@@ -97,10 +96,26 @@ class Shredder(fieldSize: Int) {
      */
     fun render(ctx: Context) {
         val screenX = -ctx.sideLen
-        val screenY = ctx.clipWrap(y + ctx.scrollOffset.y) * ctx.sideLen
+        val yScrolled = ctx.clipWrap(y + ctx.scrollOffset.y)
+        val screenY = yScrolled * ctx.sideLen
         val width = ctx.wholeFieldSize + 2 * ctx.sideLen
         val lineWidth = width / 100
         val dash = width / 10
+        dashedLines(ctx, screenX, screenY, lineWidth, width, dash)
+        if (yScrolled in 0f..1f)
+            dashedLines(ctx, screenX, screenY + ctx.wholeFieldSize, lineWidth, width, dash)
+        else if (yScrolled in (ctx.gs.fieldSize - 2).toFloat()..(ctx.gs.fieldSize - 1).toFloat())
+            dashedLines(ctx, screenX, screenY - ctx.wholeFieldSize, lineWidth, width, dash)
+    }
+
+    private fun dashedLines(
+        ctx: Context,
+        screenX: Float,
+        screenY: Float,
+        lineWidth: Float,
+        width: Float,
+        dash: Float
+    ) {
         dashedLineFromLeft(ctx, screenX, screenY + lineWidth / 2, screenX + width, lineWidth, dash)
         dashedLineFromRight(ctx, screenX, screenY - lineWidth / 2, screenX + width, lineWidth, dash)
     }
