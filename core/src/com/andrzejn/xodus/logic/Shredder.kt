@@ -1,7 +1,10 @@
 package com.andrzejn.xodus.logic
 
+import aurelienribon.tweenengine.Timeline
 import aurelienribon.tweenengine.Tween
+import aurelienribon.tweenengine.TweenManager
 import com.andrzejn.xodus.Context
+import com.andrzejn.xodus.helper.TW_POS_XY
 import com.andrzejn.xodus.helper.TW_Y
 import kotlin.math.abs
 import kotlin.math.sign
@@ -17,7 +20,7 @@ class Shredder(fieldSize: Int) {
      * Current Shredder position, in cell sides. Add the screen scroll offset and multiply it to sideLen
      * to get actual screen coordinates.
      */
-    var y: Float = 0f
+    var y: Float = 1.1f
 
     private var inAdvance = false
 
@@ -69,18 +72,33 @@ class Shredder(fieldSize: Int) {
     fun advance(ctx: Context, scrollUp: () -> Unit) {
         inAdvance = true
         val prevY = y.toInt()
-        Tween.to(this, TW_Y, 1f).target(y + 0.75f).setCallback { _, _ ->
-            y = ctx.clipWrap(y)
-            if (y.toInt() != prevY)
-                scrollUp()
-            inAdvance = false
-        }.start(ctx.tweenManager)
+        val cameraX = ctx.fieldCamPos.x
+        val cameraY = ctx.fieldCamPos.y
+        val advanceBy = 0.75f
+        val advanceDuration = 1f
+        Timeline.createSequence()
+            .beginParallel()
+            .push(Tween.to(this, TW_Y, advanceDuration).target(y + advanceBy))
+            .push(
+                Tween.to(ctx.fieldCamPos, TW_POS_XY, advanceDuration)
+                    .target(cameraX, cameraY + advanceBy * ctx.sideLen)
+            )
+            .end()
+            .setCallback { _, _ ->
+                y = ctx.clipWrap(y)
+                if (y.toInt() != prevY)
+                    scrollUp()
+                inAdvance = false
+            }.start(ctx.tweenManager)
     }
 
     /**
      * Render the Shredder line
      */
-    fun render(ctx: Context, screenX: Float, screenY: Float, width: Float) {
+    fun render(ctx: Context) {
+        val screenX = -ctx.sideLen
+        val screenY = ctx.clipWrap(y + ctx.scrollOffset.y) * ctx.sideLen
+        val width = ctx.wholeFieldSize + 2 * ctx.sideLen
         val lineWidth = width / 100
         val dash = width / 10
         dashedLineFromLeft(ctx, screenX, screenY + lineWidth / 2, screenX + width, lineWidth, dash)

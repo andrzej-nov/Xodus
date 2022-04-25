@@ -90,10 +90,13 @@ class Blot(
      */
     private fun renderBlots(blots: List<Vector2>, colors: Array<Color>, radiusFactor: Int) {
         ctx.sd.setColor(c.set(colors[color]).apply { a = alpha })
-        val sideLen = baseTile.sideLen
         val tilePos = baseTile.basePos
-        blots.forEach {
-            ctx.sd.filledCircle(v.set(it).scl(scatter).add(basePos).scl(sideLen).add(tilePos), sideLen / radiusFactor)
+        val radius = baseTile.sideLen / radiusFactor
+        blots.forEach { b ->
+            ctx.renderWithFieldBorders(
+                v.set(b).scl(scatter).add(basePos).scl(baseTile.sideLen).add(tilePos),
+                baseTile.coord
+            ) { ctx.sd.filledCircle(it, radius) }
         }
     }
 }

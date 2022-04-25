@@ -12,6 +12,7 @@ import com.badlogic.gdx.Gdx.graphics
 import com.badlogic.gdx.Gdx.input
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.math.Vector2
 import ktx.app.KtxScreen
@@ -58,29 +59,6 @@ class GameScreen(
      * Center point of the new tile placement
      */
     private val newTilePos = Vector2()
-
-    /**
-     * The field cell side length
-     */
-    private var sideLen: Float = 0f
-
-    /**
-     * The whole field square size
-     */
-    private var wholeFieldSize: Float = 0f
-
-    /**
-     * Logical field coords to screen coords offset.
-     * E.g. if the field has been visually scrolled by 1 cell to the right, then scrollOffset.x = 1
-     */
-    private val scrollOffset = Coord(0, 0)
-
-    /**
-     * Variables for internal calculations to reduce the GC load
-     */
-    private val v = Vector2()
-    private val c = Coord()
-    private val c2 = Coord()
 
     /**
      * It is set to the screen pointer coordinates when dragging
@@ -130,7 +108,7 @@ class GameScreen(
         ctx.score.reset()
         updateInGameDuration()
         timeStart = Calendar.getInstance().timeInMillis
-        scrollOffset.set(0, 0)
+        ctx.resetScrollOffset()
         shredder = Shredder(ctx.gs.fieldSize)
         if (loadSavedGame) try {
             val s = ctx.sav.savedGame()
@@ -143,7 +121,7 @@ class GameScreen(
         else {
             field = Field(ctx).apply {
                 newGame()
-                setSideLen(sideLen) { t -> setTileBasePos(t.coord, t.basePos) }
+                setSideLen(ctx.sideLen) { t -> ctx.setTileBasePos(t.coord, t.basePos) }
             }
             createNewTile()
         }
@@ -192,24 +170,25 @@ class GameScreen(
      */
     override fun resize(width: Int, height: Int) {
         super.resize(width, height)
-        ctx.setCamera(width, height)
+        ctx.setScreenSize(width, height)
 
-        sideLen = if (width > height)
-            min(width.toFloat() / (ctx.gs.fieldSize + 4), height.toFloat() / ctx.gs.fieldSize)
-        else
-            min(width.toFloat() / ctx.gs.fieldSize, height.toFloat() / (ctx.gs.fieldSize + 4))
-        wholeFieldSize = sideLen * ctx.gs.fieldSize
+        val sideLen =
+            if (width > height) min(width.toFloat() / (ctx.gs.fieldSize + 4), height.toFloat() / ctx.gs.fieldSize)
+            else min(width.toFloat() / ctx.gs.fieldSize, height.toFloat() / (ctx.gs.fieldSize + 4))
+        ctx.sideLen = sideLen
+        ctx.wholeFieldSize = ctx.sideLen * ctx.gs.fieldSize
         if (width > height) {
-            newTilePos.set((width + wholeFieldSize) / 2f + (width - wholeFieldSize) / 4f, height / 2f)
-            chaosPos.set((width - wholeFieldSize) / 2f - (width - wholeFieldSize) / 4f, height / 2f)
-            ctx.fitToRect(logo, (width - wholeFieldSize) / 2f, height / 2f - sideLen)
+            newTilePos.set((width + ctx.wholeFieldSize) / 2f + (width - ctx.wholeFieldSize) / 4f, height / 2f)
+            chaosPos.set((width - ctx.wholeFieldSize) / 2f - (width - ctx.wholeFieldSize) / 4f, height / 2f)
+            ctx.fitToRect(logo, (width - ctx.wholeFieldSize) / 2f, height / 2f - sideLen)
         } else {
-            newTilePos.set(width / 2f, (height - wholeFieldSize) / 2f - (height - wholeFieldSize) / 4f)
-            chaosPos.set(width / 2f, (height + wholeFieldSize) / 2f + (height - wholeFieldSize) / 4f)
-            ctx.fitToRect(logo, width / 2f - sideLen, (height - wholeFieldSize) / 2f)
+            newTilePos.set(width / 2f, (height - ctx.wholeFieldSize) / 2f - (height - ctx.wholeFieldSize) / 4f)
+            chaosPos.set(width / 2f, (height + ctx.wholeFieldSize) / 2f + (height - ctx.wholeFieldSize) / 4f)
+            ctx.fitToRect(logo, width / 2f - sideLen, (height - ctx.wholeFieldSize) / 2f)
         }
-        basePos.set((width - wholeFieldSize) / 2, (height - wholeFieldSize) / 2)
-        field.setSideLen(sideLen) { setTileBasePos(it.coord, it.basePos) }
+        basePos.set((width - ctx.wholeFieldSize) / 2, (height - ctx.wholeFieldSize) / 2)
+        ctx.setFieldSize(basePos)
+        field.setSideLen(sideLen) { ctx.setTileBasePos(it.coord, it.basePos) }
         newTile?.setSideLen(sideLen)
         newTile?.setDefaultNewTileBasePos()
         floatingTile.tile = newTile
@@ -223,10 +202,8 @@ class GameScreen(
         help.setBounds(offset, offset, buttonSize, buttonSize)
         settings.setBounds(width - sideLen + offset, sideLen + offset, buttonSize, buttonSize)
         exit.setBounds(width - sideLen + offset, offset, buttonSize, buttonSize)
-        if (width > height)
-            ok.setPosition(newTilePos.x - sideLen / 2, newTilePos.y + sideLen)
-        else
-            ok.setPosition(newTilePos.x + sideLen, newTilePos.y - sideLen / 2)
+        if (width > height) ok.setPosition(newTilePos.x - sideLen / 2, newTilePos.y + sideLen)
+        else ok.setPosition(newTilePos.x + sideLen, newTilePos.y - sideLen / 2)
         ok.setSize(sideLen, sideLen)
         ctx.score.setCoords((sideLen / 2).toInt(), sideLen, width.toFloat())
     }
@@ -235,76 +212,42 @@ class GameScreen(
      * Applies scrolling to the field
      */
     private fun scrollFieldBy(c: Coord) {
-        scrollOffset.add(c)
-        field.applyToAllTiles { t ->
-            setTileBasePos(t.coord, t.basePos)
-            t.intent.forEach { i -> i.resetSelectorArrows() }
-        }
+        ctx.scrollFieldBy(c)
+        field.updateTilePositions()
     }
 
-    /**
-     * Set the tile corner screen coordinates, considering scrolling
-     */
-    private fun setTileBasePos(c: Coord, basePos: Vector2) {
-        c2.set(c).fieldTileToScreenCell()
-        basePos.set(c2.x * sideLen, c2.y * sideLen).add(this.basePos)
-    }
-
-    /**
-     * Update the provided coords from the cell pointed on the screen to the logical field tile indexes.
-     * Returns the converted coord for chaining.
-     */
-    private fun Coord.screenCellToFieldTile() =
-        this.set(ctx.clipWrap(this.x - scrollOffset.x), ctx.clipWrap(this.y - scrollOffset.y))
-
-    /**
-     * Update the provided coords from the logical field tile indexes to the cell pointed on the screen
-     * Returns the converted coord for chaining.
-     */
-    private fun Coord.fieldTileToScreenCell() =
-        this.set(ctx.clipWrap(this.x + scrollOffset.x), ctx.clipWrap(this.y + scrollOffset.y))
-
-    /**
-     * Converts screen cell indexes to the bottom-left screen coordinates to draw the rectangle
-     * Sets private var v to the same value
-     */
-    private fun Coord.toScreenCellCorner(): Vector2 =
-        v.set(this.x.toFloat(), this.y.toFloat()).scl(sideLen).add(basePos)
-
-    /**
-     * Returns indexes of the screen cell pointed by touch/mouse. (-1, -1) of pointed otside of the field.
-     * Sets private var c to the same return value
-     */
-    private fun Vector2.toScreenCell(): Coord {
-        if (this.x !in basePos.x..basePos.x + wholeFieldSize || this.y !in basePos.y..basePos.y + wholeFieldSize)
-            return c.unSet()
-        return c.set(((this.x - basePos.x) / sideLen).toInt(), ((this.y - basePos.y) / sideLen).toInt())
-    }
+    private val v = Vector2()
+    private val c = Coord()
 
     /**
      * Invoked on each screen rendering. Recalculates ball moves, invokes timer actions and draws rthe screen.
      */
     override fun render(delta: Float) {
         super.render(delta)
-
         // Here the Tween Engine updates all our respective object fields when any tween animation is requested
         ctx.tweenManager.update(if (graphics.isContinuousRendering) delta else 0.01f)
         // Hack to enable continuous rendering only when it is needed
         graphics.isContinuousRendering = ctx.tweenAnimationRunning()
-
         with(ctx.theme.screenBackground) {
             clearScreen(r, g, b, a, true)
         }
         if (!ctx.batch.isDrawing) ctx.batch.begin()
+        val sideLen = ctx.sideLen
+        ctx.drawToField()
         ctx.sd.setColor(ctx.theme.gameboardBackground)
-        ctx.sd.filledRectangle(basePos.x, basePos.y, wholeFieldSize, wholeFieldSize)
-        ctx.pointerPosition(input.x, input.y).toScreenCell().toScreenCellCorner() // Sets the c and v variables
-        if (c.isSet())
+        ctx.sd.filledRectangle(-sideLen, -sideLen, ctx.wholeFieldSize + sideLen * 2, ctx.wholeFieldSize + sideLen * 2)
+        c.set(ctx.toFieldIndex(ctx.pointerPositionField(input.x, input.y)))
+        if (c.isSet()) {
+            v.set(ctx.toFieldCellCorner(c))
             ctx.sd.filledRectangle(v.x, v.y, sideLen, sideLen, ctx.theme.cellHilight)
+        }
         renderFieldGrid()
         field.shredBalls { shredder.shreddedBalls(it) }
         field.render()
-        shredder.render(ctx, basePos.x, basePos.y + ctx.clipWrap(shredder.y + scrollOffset.y) * sideLen, wholeFieldSize)
+        shredder.render(ctx)
+        ctx.batch.flush()
+
+        ctx.drawToScreen()
         logo.draw(ctx.batch)
         chaos.draw(ctx.batch)
         ctx.sd.setColor(ctx.theme.gameboardBackground)
@@ -312,10 +255,8 @@ class GameScreen(
         ctx.sd.setColor(ctx.theme.settingSeparator)
         ctx.sd.circle(newTilePos.x, newTilePos.y, sideLen * 0.9f, 1f)
         floatingTile.render()
-        if (field.noMoreBalls())
-            play.draw(ctx.batch)
-        else
-            playblue.draw(ctx.batch)
+        if (field.noMoreBalls()) play.draw(ctx.batch)
+        else playblue.draw(ctx.batch)
         help.draw(ctx.batch)
         settings.draw(ctx.batch)
         exit.draw(ctx.batch)
@@ -325,23 +266,16 @@ class GameScreen(
     }
 
     private fun renderFieldGrid() {
+        val sideLen = ctx.sideLen
         ctx.sd.setColor(ctx.theme.gameBorders)
-        (0..ctx.gs.fieldSize).forEach { y ->
+        (-1..ctx.gs.fieldSize + 1).forEach { y ->
             ctx.sd.line(
-                basePos.x,
-                basePos.y + y * sideLen,
-                basePos.x + wholeFieldSize,
-                basePos.y + y * sideLen,
-                1f
+                -sideLen, y * sideLen, ctx.wholeFieldSize + 2 * sideLen, y * sideLen, 1f
             )
         }
-        (0..ctx.gs.fieldSize).forEach { x ->
+        (-1..ctx.gs.fieldSize + 1).forEach { x ->
             ctx.sd.line(
-                basePos.x + x * sideLen,
-                basePos.y,
-                basePos.x + x * sideLen,
-                basePos.y + wholeFieldSize,
-                1f
+                x * sideLen, -sideLen, x * sideLen, ctx.wholeFieldSize + 2 * sideLen, 1f
             )
         }
     }
@@ -351,40 +285,42 @@ class GameScreen(
     /**
      * Set the selector or put the new tile into place, depending on current state
      */
-    private fun setSelectorOrPutNewTileAt(v: Vector2) {
+    private fun setSelectorOrPutNewTileAt(vf: Vector2) {
         val nT = newTile
-        if (field.selectorsHitTest(v)) {
-            if (nT == null && field.noMoreSelectors())
-                endOfTurn()
+        if (field.selectorsHitTest(vf)) {
+            if (nT == null && field.noMoreSelectors()) endOfTurn()
             return
         }
         if (nT == null) return
-        val coord = v.toScreenCell()
-        if (coord.isNotSet()) {
-            inAnimation = true
-            v.set(newTilePos).sub(sideLen / 2f, sideLen / 2f)
-            Tween.to(floatingTile, TW_POS_XY, 0.1f).target(v.x, v.y)
-                .setCallback { _, _ ->
-                    nT.setDefaultNewTileBasePos()
-                    inAnimation = false
-                }
-                .start(ctx.tweenManager)
-        } else {
-            inAnimation = true
-            v.set(coord.toScreenCellCorner())
-            coord.screenCellToFieldTile()
-            val (x, y) = coord.x to coord.y // Split to local variables to avoid side evvects from reusing class
-            // properties for coord translations in subsequent render() calls
-            Tween.to(floatingTile, TW_POS_XY, 0.3f).target(v.x, v.y)
-                .setCallback { _, _ ->
-                    field.putTile(nT, x, y)
-                    newTile = null
-                    floatingTile.tile = null
-                    inAnimation = false
-                    if (field.noMoreSelectors()) endOfTurn()
-                }
-                .start(ctx.tweenManager)
-        }
+        val coord = ctx.toFieldIndex(vf)
+        if (coord.isNotSet()) cancelNewTileDrag(nT) else dropNewTileToField(coord, nT)
+    }
+
+    private fun dropNewTileToField(
+        coord: Coord,
+        nT: Tile
+    ) {
+        inAnimation = true
+        v.set(ctx.toScreenCellCorner(coord))
+        coord.set(ctx.fieldIndexToTileIndex(coord))
+        val (x, y) = coord.x to coord.y // Split to local variables to avoid side evvects from reusing class
+        // properties for coord translations in subsequent render() calls
+        Tween.to(floatingTile, TW_POS_XY, 0.3f).target(v.x, v.y).setCallback { _, _ ->
+            field.putTile(nT, x, y)
+            newTile = null
+            floatingTile.tile = null
+            inAnimation = false
+            if (field.noMoreSelectors()) endOfTurn()
+        }.start(ctx.tweenManager)
+    }
+
+    private fun cancelNewTileDrag(nT: Tile) {
+        inAnimation = true
+        v.set(newTilePos).sub(ctx.sideLen / 2f, ctx.sideLen / 2f)
+        Tween.to(floatingTile, TW_POS_XY, 0.1f).target(v.x, v.y).setCallback { _, _ ->
+            nT.setDefaultNewTileBasePos()
+            inAnimation = false
+        }.start(ctx.tweenManager)
     }
 
     /**
@@ -392,7 +328,7 @@ class GameScreen(
      */
     private fun createNewTile() {
         newTile = Tile().apply {
-            setSideLen(this@GameScreen.sideLen)
+            setSideLen(ctx.sideLen)
             setDefaultNewTileBasePos()
             floatingTile.tile = this
         }
@@ -409,28 +345,28 @@ class GameScreen(
      * Find a position for the Chaos move, create and put the tile there.
      */
     private fun chaosMove(move: Int) {
+        if (field.noMoreBalls())
+            return
         if (move <= 0) {
             createNewTile()
             return
         }
         val t = Tile().apply {
-            setSideLen(this@GameScreen.sideLen)
+            setSideLen(ctx.sideLen)
             basePos.set(chaosPos).sub(sideLen / 2, sideLen / 2)
         }
         floatingTile.tile = t
         val c = field.chaosTileCoord()
         val (x, y) = c.x to c.y // split to local variables to avoid side effects of reusing the class properties
         // in subsequent render() calls
-        c.fieldTileToScreenCell().toScreenCellCorner() // sets the v variable
+        v.set(ctx.toScreenCellCorner(ctx.tileIndexToFieldIndex(c)))
         inAnimation = true
-        Tween.to(floatingTile, TW_POS_XY, 0.5f).target(v.x, v.y)
-            .setCallback { _, _ ->
-                field.putTile(t, x, y)
-                floatingTile.tile = null
-                inAnimation = false
-                chaosMove(move - 1)
-            }
-            .start(ctx.tweenManager)
+        Tween.to(floatingTile, TW_POS_XY, 0.5f).target(v.x, v.y).setCallback { _, _ ->
+            field.putTile(t, x, y)
+            floatingTile.tile = null
+            inAnimation = false
+            chaosMove(move - 1)
+        }.start(ctx.tweenManager)
     }
 
     private val scrollUp = Coord(0, -1)
@@ -439,11 +375,10 @@ class GameScreen(
      * End of player's turn. Do Shredder and Chaos moves.
      */
     private fun endOfTurn() {
-        if (field.noMoreBalls())
-            return
+        if (field.noMoreBalls()) return
         ctx.score.incrementMoves()
         shredder.advance(ctx) { scrollFieldBy(scrollUp) }
-        field.advanceBalls({ chaosMove(ctx.gs.chaosMoves) }) { b -> shredder.currentBallDist(b) }
+        field.advanceBalls({ chaosMove(ctx.gs.chaosMoves) }, { b -> shredder.currentBallDist(b) })
     }
 
     /**
@@ -458,37 +393,45 @@ class GameScreen(
      * Our input adapter
      */
     inner class IAdapter : InputAdapter() {
-        private val cellDragOrigin = Coord()
+        private var inFieldDrag = false
+        private val prevDragPos = Vector2()
+        private val v = Vector2()
+        private val c = Coord()
 
         /**
          * Invoked when the player drags something on the screen.
          */
         override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
-            if (inAnimation)
-                return super.touchDragged(screenX, screenY, pointer)
-            dragPos.set(ctx.pointerPosition(screenX, screenY))
-            val c = dragPos.toScreenCell()
+            if (inAnimation) return super.touchDragged(screenX, screenY, pointer)
+            prevDragPos.set(dragPos)
+            dragPos.set(ctx.pointerPositionScreen(screenX, screenY))
+            c.set(ctx.toScreenIndex(dragPos))
             if (dragFrom == DragSource.None) {
                 dragStart.set(dragPos)
-                if (c.isSet())
-                    dragFrom = DragSource.Board
-                else if (dragPos.dst(newTilePos) < sideLen)
-                    dragFrom = DragSource.NewTile
+                if (c.isSet()) dragFrom = DragSource.Board
+                else if (dragPos.dst(newTilePos) < ctx.sideLen) dragFrom = DragSource.NewTile
             }
-            if (dragFrom == DragSource.NewTile)
-                floatingTile.position.set(dragPos).sub(sideLen / 2, sideLen / 2)
+            if (dragFrom == DragSource.NewTile) floatingTile.position.set(dragPos).sub(ctx.sideLen / 2, ctx.sideLen / 2)
             if (dragFrom == DragSource.Board) {
-                if (c.isSet()) {
-                    if (cellDragOrigin.isNotSet())
-                        cellDragOrigin.set(c)
-                    else if (cellDragOrigin != c) {
-                        if (c.sub(cellDragOrigin).isNotZero()) {
-                            scrollFieldBy(c)
-                            cellDragOrigin.add(c)
-                        }
-                    }
-                } else
-                    cellDragOrigin.unSet()
+                if (c.isNotSet()) {
+                    inFieldDrag = false
+                    return super.touchDragged(screenX, screenY, pointer)
+                }
+                if (!inFieldDrag) {
+                    inFieldDrag = true
+                    return super.touchDragged(screenX, screenY, pointer)
+                }
+                v.set(dragPos).sub(prevDragPos)
+                with(ctx.fieldCamPos) {
+                    x -= v.x
+                    y -= v.y
+                }
+                c.set(
+                    ((ctx.wholeFieldSize / 2 - ctx.fieldCamPos.x) / ctx.sideLen).toInt(),
+                    ((ctx.wholeFieldSize / 2 - ctx.fieldCamPos.y) / ctx.sideLen).toInt()
+                )
+                if (c.isNotZero())
+                    scrollFieldBy(c)
             }
             return super.touchDragged(screenX, screenY, pointer)
         }
@@ -497,13 +440,12 @@ class GameScreen(
          * Called when screen is untouched (mouse button released)
          */
         override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-            if (inAnimation)
-                return super.touchDragged(screenX, screenY, pointer)
+            if (inAnimation) return super.touchDragged(screenX, screenY, pointer)
             if (button == Input.Buttons.RIGHT) { // Right click (on desktop)
                 endOfTurn()
                 return super.touchDragged(screenX, screenY, pointer)
             }
-            val v = ctx.pointerPosition(screenX, screenY)
+            val v = ctx.pointerPositionScreen(screenX, screenY)
             when {
                 buttonTouched(v, play) -> newGame(false)
                 buttonTouched(v, exit) -> Gdx.app.exit()
@@ -513,9 +455,10 @@ class GameScreen(
                 else -> if (dragFrom == DragSource.None || dragFrom == DragSource.NewTile || dragStart.dst(dragPos) < 4)
                 // The last condition is a safeguard against clicks with minor pointer slides that are erroneously
                 // interpreted as drags
-                    setSelectorOrPutNewTileAt(v)
+                    setSelectorOrPutNewTileAt(ctx.pointerPositionField(screenX, screenY))
             }
-            cellDragOrigin.unSet()
+            inFieldDrag = false
+            prevDragPos.set(Vector2.Zero)
             dragPos.set(Vector2.Zero)
             dragFrom = DragSource.None
             newTile?.setDefaultNewTileBasePos()

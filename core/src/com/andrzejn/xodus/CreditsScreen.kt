@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFontCache
 import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.utils.Align
 import ktx.app.KtxScreen
+import ktx.app.clearScreen
 
 /**
  * The simplest screen. Just displays the credits and opens respective links.
@@ -56,12 +57,12 @@ class CreditsScreen(
      */
     override fun resize(width: Int, height: Int) {
         super.resize(width, height)
-        gridX = ctx.camera.viewportWidth / 8
-        gridY = ctx.camera.viewportHeight / 9
+        gridX = Gdx.graphics.width.toFloat()
+        gridY = Gdx.graphics.height.toFloat()
 
-        ctx.fitToRect(logo, ctx.camera.viewportWidth, 2 * gridY * 0.8f)
+        ctx.fitToRect(logo, Gdx.graphics.width.toFloat(), 2 * gridY * 0.8f)
         logo.setPosition(
-            (ctx.camera.viewportWidth - logo.width) / 2,
+            (Gdx.graphics.width - logo.width) / 2,
             gridY * 8 - logo.height / 2
         )
         ctx.fitToRect(icongmail, gridX * 0.9f, gridY * 0.9f)
@@ -121,8 +122,10 @@ class CreditsScreen(
      */
     override fun render(delta: Float) {
         super.render(delta)
+        with(ctx.theme.screenBackground) {
+            clearScreen(r, g, b, a, true)
+        }
         ctx.batch.begin()
-        ctx.sd.filledRectangle(0f, 0f, ctx.camera.viewportWidth, ctx.camera.viewportHeight, ctx.theme.screenBackground)
         logo.draw(ctx.batch)
         icongmail.draw(ctx.batch)
         icontelegram.draw(ctx.batch)
@@ -142,7 +145,7 @@ class CreditsScreen(
          * Handle clicks/presses
          */
         override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-            val v = ctx.pointerPosition(Gdx.input.x, Gdx.input.y)
+            val v = ctx.pointerPositionScreen(Gdx.input.x, Gdx.input.y)
 
             if (v.y in 5f * gridY..6f * gridY)
                 Gdx.net.openURI("mailto:andrzej.novosiolov@gmail.com?subject=The%20Xodus%20game")

@@ -74,8 +74,6 @@ abstract class TrackSegment(
 
     fun aheadSideIndex(b: Ball): Int = if (isMovingFromSegmentStart(b)) 1 else 0
 
-    fun behindSideIndex(b: Ball): Int = if (isMovingFromSegmentStart(b)) 0 else 1
-
     /**
      * Colors the segment by the ball
      */
@@ -85,7 +83,7 @@ abstract class TrackSegment(
         split = ballPositionToSplit(b)
     }
 
-    protected var lineWidth: Float = 0f
+    private var lineWidth: Float = 0f
 
     private var _sideLen: Float = 0f
 
@@ -100,8 +98,19 @@ abstract class TrackSegment(
             lineWidth = value / 6
         }
 
+    /**
+     * Render the segment, overriding the color and line width
+     */
     abstract fun render(ctx: Context, clr: Color, lWidth: Float)
+
+    /**
+     * Render the segment
+     */
     abstract fun render(ctx: Context)
+
+    /**
+     * Reset the segment colors to none
+     */
     fun reset() {
         color[0] = 0
         color[1] = 0

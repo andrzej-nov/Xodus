@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFontCache
 import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.utils.Align
 import ktx.app.KtxScreen
+import ktx.app.clearScreen
 import kotlin.math.min
 
 /**
@@ -64,10 +65,10 @@ class HomeScreen(
      */
     override fun resize(width: Int, height: Int) {
         super.resize(width, height)
-        ctx.setCamera(width, height)
-        val baseHeight = ctx.camera.viewportHeight
-        baseWidth = min(ctx.camera.viewportWidth, baseHeight * 3 / 4)
-        baseX = (ctx.camera.viewportWidth - baseWidth) / 2
+        ctx.setScreenSize(width, height)
+        val baseHeight = Gdx.graphics.height.toFloat()
+        baseWidth = min(Gdx.graphics.width.toFloat(), baseHeight * 3 / 4)
+        baseX = (Gdx.graphics.width - baseWidth) / 2
         gridX = baseWidth / 12
         gridY = baseHeight / 8
         radius = min(2 * gridX, gridY) * 0.4f
@@ -123,9 +124,11 @@ class HomeScreen(
      */
     override fun render(delta: Float) {
         super.render(delta)
+        with(ctx.theme.screenBackground) {
+            clearScreen(r, g, b, a, true)
+        }
         ctx.batch.begin()
-        ctx.sd.filledRectangle(0f, 0f, ctx.camera.viewportWidth, ctx.camera.viewportHeight, ctx.theme.screenBackground)
-        ctx.sd.rectangle(baseX, 0f, baseWidth, ctx.camera.viewportHeight, ctx.theme.settingSeparator)
+        ctx.sd.rectangle(baseX, 0f, baseWidth, Gdx.graphics.height.toFloat(), ctx.theme.settingSeparator)
         logo.draw(ctx.batch)
         renderGameSettings()
 
@@ -202,7 +205,7 @@ class HomeScreen(
          * (at the end of the method)
          */
         override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-            val v = ctx.pointerPosition(Gdx.input.x, Gdx.input.y)
+            val v = ctx.pointerPositionScreen(Gdx.input.x, Gdx.input.y)
             if (v.x < 0 || v.y < 0)
                 return super.touchDown(screenX, screenY, pointer, button)
             v.x -= baseX

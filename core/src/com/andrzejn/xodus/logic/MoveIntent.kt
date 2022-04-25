@@ -75,6 +75,11 @@ class MoveIntent(
     }
 
     /**
+     * Internal variable for calculations, to reduce GC load
+     */
+    private val v = Vector2()
+
+    /**
      * Render selector arrows
      */
     fun render(ctx: Context) {
@@ -82,11 +87,20 @@ class MoveIntent(
             directionArrows = buildDirectionArrows()
         val arrows = directionArrows ?: return
         segments.forEach { it.render(ctx, ctx.theme.dark[selectorColor], 2f) }
-        arrows.forEach {
-            ctx.sd.setColor(ctx.theme.light[selectorColor])
-            ctx.sd.filledPolygon(it.second)
-            ctx.sd.setColor(ctx.theme.dark[selectorColor])
-            ctx.sd.polygon(it.second)
+        ctx.renderWithFieldBorders(
+            v.set(Vector2.Zero),
+            tile.coord
+        ) {
+            arrows.forEach { (_, p) ->
+                with(ctx.sd) {
+                    p.setOrigin(it.x, it.y)
+                    setColor(ctx.theme.light[selectorColor])
+                    filledPolygon(p)
+                    setColor(ctx.theme.dark[selectorColor])
+                    polygon(p)
+                    p.setOrigin(0f, 0f)
+                }
+            }
         }
     }
 

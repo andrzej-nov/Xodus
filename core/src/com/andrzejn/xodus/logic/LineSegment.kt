@@ -67,34 +67,44 @@ class LineSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
      * Value for internal calculations to reduce GC load
      */
     private val s = Vector2()
+    private val vbase = Vector2()
 
     /**
      * Render this segment, overriding color and line width
      */
     override fun render(ctx: Context, clr: Color, lWidth: Float) {
-        s.set(splitPos).add(tile.basePos)
-        ctx.sd.line(s, v.set(ends[1]).add(tile.basePos), clr, lWidth)
+        ctx.renderWithFieldBorders(
+            vbase.set(Vector2.Zero),
+            tile.coord
+        ) {
+            s.set(it).add(splitPos).add(tile.basePos)
+            ctx.sd.line(s, v.set(it).add(ends[1]).add(tile.basePos), clr, lWidth)
+        }
     }
-
 
     /**
      * Render this segment
      */
     override fun render(ctx: Context) {
-        s.set(splitPos).add(tile.basePos)
-        if (split > 0)
+        ctx.renderWithFieldBorders(
+            vbase.set(Vector2.Zero),
+            tile.coord
+        ) {
+            s.set(it).add(splitPos).add(tile.basePos)
+            if (split > 0)
+                ctx.sd.line(
+                    v.set(it).add(ends[0]).add(tile.basePos),
+                    s,
+                    colorFor(color[0], ctx),
+                    colorBasedLineWidth(color[0])
+                )
             ctx.sd.line(
-                v.set(ends[0]).add(tile.basePos),
                 s,
-                colorFor(color[0], ctx),
-                colorBasedLineWidth(color[0])
+                v.set(it).add(ends[1]).add(tile.basePos),
+                colorFor(color[1], ctx),
+                colorBasedLineWidth(color[1])
             )
-        ctx.sd.line(
-            s,
-            v.set(ends[1]).add(tile.basePos),
-            colorFor(color[1], ctx),
-            colorBasedLineWidth(color[1])
-        )
+        }
     }
 
     /**

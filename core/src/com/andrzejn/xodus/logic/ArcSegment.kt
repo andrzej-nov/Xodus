@@ -103,24 +103,34 @@ class ArcSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
      * Render this segment, overriding color and line width
      */
     override fun render(ctx: Context, clr: Color, lWidth: Float) {
-        v.set(center).add(tile.basePos)
-        ctx.sd.setColor(clr)
-        ctx.sd.arc(v.x, v.y, radius, angle + splitRadians, radians - splitRadians, lWidth)
+        ctx.renderWithFieldBorders(
+            v.set(center).add(tile.basePos),
+            tile.coord
+        ) {
+            ctx.sd.setColor(clr)
+            ctx.sd.arc(it.x, it.y, radius, angle + splitRadians, radians - splitRadians, lWidth)
+        }
     }
+
+    private val vdraw = Vector2()
 
     /**
      * Render this segment
      */
     override fun render(ctx: Context) {
-        v.set(center).add(tile.basePos)
-        if (split > 0) {
-            ctx.sd.setColor(colorFor(color[0], ctx))
-            ctx.sd.arc(v.x, v.y, radius, angle, splitRadians, colorBasedLineWidth(color[0]))
+        ctx.renderWithFieldBorders(
+            vdraw.set(center).add(tile.basePos),
+            tile.coord
+        ) {
+            if (split > 0) {
+                ctx.sd.setColor(colorFor(color[0], ctx))
+                ctx.sd.arc(it.x, it.y, radius, angle, splitRadians, colorBasedLineWidth(color[0]))
+            }
+            ctx.sd.setColor(colorFor(color[1], ctx))
+            ctx.sd.arc(
+                it.x, it.y, radius, angle + splitRadians, radians - splitRadians, colorBasedLineWidth(color[1])
+            )
         }
-        ctx.sd.setColor(colorFor(color[1], ctx))
-        ctx.sd.arc(
-            v.x, v.y, radius, angle + splitRadians, radians - splitRadians, colorBasedLineWidth(color[1])
-        )
     }
 
 }

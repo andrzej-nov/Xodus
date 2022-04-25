@@ -103,19 +103,22 @@ class Ball(
      * Render the ball
      */
     fun render(ctx: Context) {
-        v.set(currentPosition).add(tile.basePos)
-        ctx.sd.filledCircle(v, outerRadius, ctx.theme.dark[color])
-        ctx.sd.filledCircle(v, innerRadius, ctx.theme.light[color])
-        v2.set(innerRadius * 2f / 3, innerRadius / 3f).rotateRad(
-            segment?.directionAngleFor(this) ?: (directionAngle[movingFromSide]
-                ?: return)
-        ).add(v)
-        ctx.sd.filledCircle(v2, innerRadius / 6f, ctx.theme.eyeColor)
-        v2.set(innerRadius * 2f / 3, -innerRadius / 3f).rotateRad(
-            segment?.directionAngleFor(this) ?: (directionAngle[movingFromSide]
-                ?: return)
-        ).add(v)
-        ctx.sd.filledCircle(v2, innerRadius / 6f, ctx.theme.eyeColor)
+        val defaultAngle = directionAngle[movingFromSide] ?: return
+        ctx.renderWithFieldBorders(
+            v.set(currentPosition).add(tile.basePos),
+            tile.coord
+        ) {
+            ctx.sd.filledCircle(it, outerRadius, ctx.theme.dark[color])
+            ctx.sd.filledCircle(it, innerRadius, ctx.theme.light[color])
+            v2.set(innerRadius * 2f / 3, innerRadius / 3f).rotateRad(
+                segment?.directionAngleFor(this) ?: defaultAngle
+            ).add(it)
+            ctx.sd.filledCircle(v2, innerRadius / 6f, ctx.theme.eyeColor)
+            v2.set(innerRadius * 2f / 3, -innerRadius / 3f).rotateRad(
+                segment?.directionAngleFor(this) ?: defaultAngle
+            ).add(it)
+            ctx.sd.filledCircle(v2, innerRadius / 6f, ctx.theme.eyeColor)
+        }
     }
 
 }

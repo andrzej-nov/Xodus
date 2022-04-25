@@ -4,23 +4,24 @@ import aurelienribon.tweenengine.Tween
 import aurelienribon.tweenengine.TweenManager
 import com.andrzejn.xodus.helper.*
 import com.andrzejn.xodus.logic.Blot
+import com.andrzejn.xodus.logic.Coord
 import com.andrzejn.xodus.logic.Field
 import com.andrzejn.xodus.logic.Shredder
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.assets.loaders.TextureAtlasLoader
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.*
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.setMaxTextureSize
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
+import com.badlogic.gdx.utils.Scaling
+import com.badlogic.gdx.utils.viewport.*
 import ktx.assets.Asset
 import ktx.assets.loadOnDemand
 import space.earlygrey.shapedrawer.ShapeDrawer
-import kotlin.math.floor
 
 /**
  * Holds all application-wide objects.
@@ -41,9 +42,14 @@ class Context(
     lateinit var batch: PolygonSpriteBatch
 
     /**
-     * Camera for drawing all screens. Simple unmoving orthographic camera for static 2D view.
+     * The main screen viewport
      */
-    lateinit var camera: OrthographicCamera
+    private val screen: ScreenViewport = ScreenViewport()
+
+    /**
+     * Viewport for the game field
+     */
+    private lateinit var field: ScalingViewport
 
     /**
      * Drawer for geometric shapes on the screens
@@ -75,6 +81,7 @@ class Context(
         Tween.registerAccessor(Field::class.java, FieldAccessor())
         Tween.registerAccessor(Blot::class.java, BlotAccessor())
         Tween.registerAccessor(Shredder::class.java, ShredderAccessor())
+        Tween.registerAccessor(Vector3::class.java, Vector3Accessor())
     }
 
     /**
@@ -99,18 +106,141 @@ class Context(
     }
 
     /**
-     * A variable for internal calculations, to reduce GC load
+     * Logical field coords to screen coords offset.
+     * E.g. if the field has been visually scrolled by 1 cell to the right, then scrollOffset.x = 1
      */
-    private val v3 = Vector3()
+    val scrollOffset: Coord = Coord(0, 0)
+    private val bottomLeft = Coord(0, 0)
+    private val topRight = Coord(gs.fieldSize - 1, gs.fieldSize - 1)
 
     /**
-     * Convert the UI screen coordinates (mouse clicks or touches, for example) to the OpenGL scene coordinates
-     * which are used for drawing
+     * Reset scroll offset to zero
      */
-    fun pointerPosition(screenX: Int, screenY: Int): Vector2 {
-        v3.set(screenX.toFloat(), screenY.toFloat(), 0f)
-        camera.unproject(v3)
-        return Vector2(v3.x, v3.y)
+    fun resetScrollOffset() {
+        scrollOffset.set(0, 0)
+        if (this::field.isInitialized) // Check if the lateinit property has been initialised already
+            field.camera.position.set(wholeFieldSize / 2, wholeFieldSize / 2, 0f)
+        bottomLeft.set(0, 0)
+        topRight.set(gs.fieldSize - 1, gs.fieldSize - 1)
+    }
+
+    /**
+     * Applies scrolling to the field
+     */
+    fun scrollFieldBy(change: Coord) {
+        fieldCamPos.x += sideLen * change.x
+        fieldCamPos.y += sideLen * change.y
+        scrollOffset.add(change)
+        bottomLeft.set(0, 0)
+        bottomLeft.set(fieldIndexToTileIndex(bottomLeft))
+        topRight.set(gs.fieldSize - 1, gs.fieldSize - 1)
+        topRight.set(fieldIndexToTileIndex(topRight))
+    }
+
+    /**
+     * The field cell side length
+     */
+    var sideLen: Float = 0f
+
+    /**
+     * Set the tile corner screen coordinates, considering scrolling
+     */
+    fun setTileBasePos(crd: Coord, basePos: Vector2) {
+        c.set(tileIndexToFieldIndex(crd))
+        basePos.set(c.x * sideLen, c.y * sideLen)
+    }
+
+    /**
+     * Convert the provided coords from the cell pointed on the screen to the logical field tile indexes.
+     * Returns the converted coord for chaining.
+     */
+    fun fieldIndexToTileIndex(crd: Coord): Coord =
+        c.set(clipWrap(crd.x - scrollOffset.x), clipWrap(crd.y - scrollOffset.y))
+
+    /**
+     * Convert the provided coords from the logical field tile indexes to the cell pointed on the screen
+     * Returns the converted coord for chaining.
+     */
+    fun tileIndexToFieldIndex(crd: Coord): Coord =
+        c.set(clipWrap(crd.x + scrollOffset.x), clipWrap(crd.y + scrollOffset.y))
+
+    /**
+     * Converts screen cell indexes to the bottom-left screen coordinates to draw the rectangle
+     * Sets private var v to the same value
+     */
+    fun toScreenCellCorner(c: Coord): Vector2 {
+        val v = toFieldCellCorner(c)
+        v3.set(v.x, v.y, 0f)
+        field.project(v3)
+        return v.set(v3.x, v3.y)
+    }
+
+    /**
+     * Variables for internal calculations to reduce the GC load
+     */
+    private val v = Vector2()
+    private val c = Coord()
+
+    /**
+     * Converts screen cell indexes to the bottom-left screen coordinates to draw the rectangle
+     * Sets private var v to the same value
+     */
+    fun toFieldCellCorner(c: Coord): Vector2 = v.set(c.x.toFloat(), c.y.toFloat()).scl(sideLen)
+
+    /**
+     * Returns indexes of the screen cell pointed by touch/mouse. (-1, -1) of pointed otside of the field.
+     * Sets private var c to the same return value
+     */
+    fun toScreenIndex(v: Vector2): Coord {
+        if (v.x !in field.screenX.toFloat()..field.screenX.toFloat() + wholeFieldSize ||
+            v.y !in field.screenY.toFloat()..field.screenY.toFloat() + wholeFieldSize
+        ) return c.unSet()
+        return c.set(((v.x - field.screenX) / sideLen).toInt(), ((v.y - field.screenY) / sideLen).toInt())
+    }
+
+    /**
+     * Returns indexes of the field cell pointed by touch/mouse. (-1, -1) of pointed otside of the field.
+     * Sets private var c to the same return value
+     */
+    fun toFieldIndex(v: Vector2): Coord {
+        if (v.x !in 0f..wholeFieldSize || v.y !in 0f..wholeFieldSize) return c.unSet()
+        return c.set((v.x / sideLen).toInt(), (v.y / sideLen).toInt())
+    }
+
+    /**
+     * The whole field square size, in pixels
+     */
+    var wholeFieldSize: Float = 0f
+
+    /**
+     * Variable for internal calculations, to reduce GC load
+     */
+    private val vrend = Vector2()
+
+    /**
+     * Perform given render at given coordinates, and repeat it at respective duplicate positions
+     * if it is at the field border tile
+     */
+    fun renderWithFieldBorders(v: Vector2, c: Coord, renderIt: (Vector2) -> Unit) {
+        var xAtBorder = false
+        renderIt(v)
+        if (c.x == bottomLeft.x) {
+            xAtBorder = true
+            renderIt(vrend.set(v).add(wholeFieldSize, 0f))
+        } else if (c.x == topRight.x) {
+            xAtBorder = true
+            renderIt(vrend.set(v).add(-wholeFieldSize, 0f))
+        }
+        if (xAtBorder) {
+            if (c.y == bottomLeft.y)
+                renderIt(vrend.add(0f, wholeFieldSize))
+            else if (c.y == topRight.y)
+                renderIt(vrend.add(0f, -wholeFieldSize))
+        }
+        if (c.y == bottomLeft.y)
+            renderIt(vrend.set(v).add(0f, wholeFieldSize))
+        else if (c.y == topRight.y)
+            renderIt(vrend.set(v).add(0f, -wholeFieldSize))
     }
 
     /**
@@ -144,8 +274,7 @@ class Context(
         if (this::batch.isInitialized) // Check if the lateinit property has been initialised already
             batch.dispose()
         batch = PolygonSpriteBatch()
-        camera = OrthographicCamera()
-        setCamera(Gdx.graphics.width, Gdx.graphics.height)
+        setScreenSize(Gdx.graphics.width, Gdx.graphics.height)
         sd = ShapeDrawer(batch, white) // A single-pixel texture provides the base color.
         // Then actual colors are specified on the drawing methon calls.
     }
@@ -153,11 +282,52 @@ class Context(
     /**
      * Update camera on screen resize
      */
-    fun setCamera(width: Int, height: Int) {
-        camera.setToOrtho(false, width.toFloat(), height.toFloat())
-        camera.update()
-        batch.projectionMatrix = camera.combined
+    fun setScreenSize(width: Int, height: Int) {
+        screen.update(width, height, true)
+//        batch.projectionMatrix = screen.camera.combined
     }
+
+    /**
+     * Sets the game field viewport size and position
+     */
+    fun setFieldSize(basePos: Vector2) {
+        field = ScalingViewport(Scaling.none, wholeFieldSize, wholeFieldSize)
+        field.camera.position.set(Vector2(wholeFieldSize / 2, wholeFieldSize / 2), 0f)
+        field.setScreenBounds(basePos.x.toInt(), basePos.y.toInt(), wholeFieldSize.toInt(), wholeFieldSize.toInt())
+    }
+
+
+    /**
+     * A convenience shortcut
+     */
+    val fieldCamPos: Vector3 get() = this.field.camera.position
+
+    /**
+     * A variable for internal calculations, to reduce GC load
+     */
+    private val v3 = Vector3()
+    private val vpp = Vector2()
+    private val vppf = Vector2()
+
+    /**
+     * Convert the UI screen coordinates (mouse clicks or touches, for example) to the OpenGL scene coordinates
+     * which are used for drawing
+     */
+    fun pointerPositionScreen(screenX: Int, screenY: Int): Vector2 {
+        v3.set(screenX.toFloat(), screenY.toFloat(), 0f)
+        screen.unproject(v3)
+        return vpp.set(v3.x, v3.y)
+    }
+
+    /**
+     * Convert the UI screen coordinates (mouse clicks or touches, for example) to the OpenGL field coordinates
+     */
+    fun pointerPositionField(screenX: Int, screenY: Int): Vector2 {
+        v3.set(screenX.toFloat(), screenY.toFloat(), 0f)
+        field.unproject(v3)
+        return vppf.set(v3.x, v3.y)
+    }
+
 
     private lateinit var atlas: Asset<TextureAtlas>
 
@@ -319,6 +489,16 @@ class Context(
         if (this::batch.isInitialized)
             batch.dispose()
         score.dispose()
+    }
+
+    fun drawToScreen() {
+        screen.apply()
+        batch.projectionMatrix = screen.camera.combined
+    }
+
+    fun drawToField() {
+        field.apply()
+        batch.projectionMatrix = field.camera.combined
     }
 
 }

@@ -94,9 +94,17 @@ class Field(
     private fun createInitialBalls() {
         var tilePos = 1
         (1..(ctx.gs.fieldSize - 1) / 2).forEach {
-            ball.add(Ball(it, tile[tilePos][2]))
+            ball.add(Ball(it, tile[tilePos][3]))
             tilePos += 2
         }
+    }
+
+    /**
+     * Set basePos for all tiles according to current scroll position.
+     */
+    fun updateTilePositions() = applyToAllTiles { t ->
+        ctx.setTileBasePos(t.coord, t.basePos)
+        t.intent.forEach { i -> i.resetSelectorArrows() }
     }
 
     /**
@@ -235,7 +243,7 @@ class Field(
     /**
      * Move balls by one position. Returns true if there are no open selectors to select and need to create new tile.
      */
-    fun advanceBalls(thenProceedWithMoves: () -> Unit, distFromShredder: (List<Ball>) -> Map<Int, Float>) {
+    fun advanceBalls(chaosMoves: () -> Unit, distFromShredder: (List<Ball>) -> Map<Int, Float>) {
         killBalls(collided(ball))
         ballsOnCollisionCourse.clear()
         ballsOnCollisionCourse.addAll(onCollisionCourse(ball))
@@ -267,7 +275,7 @@ class Field(
                 killBalls(collided(ball))
                 clickedSelectorColors.clear()
                 planTracks()
-                thenProceedWithMoves()
+                chaosMoves()
             }
             .start(ctx.tweenManager)
     }
