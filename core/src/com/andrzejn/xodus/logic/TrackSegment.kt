@@ -70,9 +70,23 @@ abstract class TrackSegment(
     fun ballPositionToSplit(b: Ball): Float =
         if (isMovingFromSegmentStart(b)) b.position else 1f - b.position
 
+    /**
+     * Set current segment color split from the ball position
+     */
+    fun setSplitFromBall(b: Ball) {
+        split = ballPositionToSplit(b)
+    }
+
+    /**
+     * Set the color that will be drawn behind the ball while it is moving.
+     */
+    fun setBehindColorForBall(b: Ball, clr: Int) {
+        color[behindSideIndexFor(b)] = clr
+    }
+
     private fun isMovingFromSegmentStart(b: Ball): Boolean = b.movingFromSide == type.sides[0]
 
-    private fun aheadSideIndex(b: Ball): Int = if (isMovingFromSegmentStart(b)) 1 else 0
+    private fun behindSideIndexFor(b: Ball): Int = if (isMovingFromSegmentStart(b)) 0 else 1
 
     private var lineWidth: Float = 0f
 
@@ -116,7 +130,7 @@ abstract class TrackSegment(
     /**
      * Ensures that unplaced new tile is drawn in light color
      */
-    protected fun colorFor(color: Int, ctx: Context) =
+    protected fun colorFor(color: Int, ctx: Context): Color =
         if (color == 0 && tile.coord.isNotSet()) ctx.theme.light[0] else ctx.theme.dark[color]
 
     /**

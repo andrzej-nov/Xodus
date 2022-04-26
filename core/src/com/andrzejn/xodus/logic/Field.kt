@@ -268,6 +268,7 @@ class Field(
         }
         blot.forEach { it.fade() }
         blot.removeAll(blot.filter { it.alpha <= 0 })
+        prepareBallSegmentColors()
         Tween.to(this, TW_POSITION, 1f).target(1f)
             .setCallback { _, _ ->
                 ball.forEach { advanceToNextTile(it) }
@@ -278,6 +279,27 @@ class Field(
                 chaosMoves()
             }
             .start(ctx.tweenManager)
+    }
+
+    /**
+     * Prepare current ball segment end colors to correctly split when the balls move
+     */
+    private fun prepareBallSegmentColors() {
+        for (b in ball) {
+            if (b in ballsOnCollisionCourse)
+                break
+            with(b.segment ?: break) {
+                val prevSide = otherSide(b.tile, b.movingFromSide)
+                val prevSideColors =
+                    prevSide.first.segment.filter { it.type.sides.contains(prevSide.second) }
+                        .map { it.color[it.type.sides.indexOf(prevSide.second)] }.filter { it != 0 }.distinct()
+                if (prevSideColors.isEmpty() || prevSideColors.size > 1)
+                    setBehindColorForBall(b, 0)
+                else
+                    setBehindColorForBall(b, prevSideColors.first())
+                setSplitFromBall(b)
+            }
+        }
     }
 
     /**
@@ -346,6 +368,7 @@ class Field(
      */
     fun render() {
         blot.forEach { it.render() }
+        ball.forEach { if (it !in ballsOnCollisionCourse) it.segment?.setSplitFromBall(it) }
         applyToAllTiles { it.render(ctx) }
         val ballsToClear = mutableListOf<Ball>()
         ball.forEach {
@@ -386,6 +409,7 @@ class Field(
         val oldTile = tile[x][y]
         t.coord.set(x, y)
         t.basePos.set(oldTile.basePos)
+        t.intent.forEachIndexed { i, intent -> intent.intentSideColor = oldTile.intent[i].intentSideColor }
         tile[x][y] = t
         ball.filter { it.tile == oldTile }.forEach {
             it.tile = t
