@@ -44,13 +44,13 @@ class HomeScreen(
         Gdx.input.inputProcessor = null // Detach the input processor
     }
 
-    private val logo = Sprite(ctx.logo)
-    private val play = Sprite(ctx.play)
-    private val exit = Sprite(ctx.exit)
-    private val info = Sprite(ctx.info)
-    private val gear = Sprite(ctx.gear)
-    private val darktheme = Sprite(ctx.darktheme)
-    private val lighttheme = Sprite(ctx.lighttheme)
+    private val logo = Sprite(ctx.a.logo)
+    private val play = Sprite(ctx.a.play)
+    private val exit = Sprite(ctx.a.exit)
+    private val info = Sprite(ctx.a.info)
+    private val gear = Sprite(ctx.a.gear)
+    private val darktheme = Sprite(ctx.a.darktheme)
+    private val lighttheme = Sprite(ctx.a.lighttheme)
 
     private var gridX = 0f
     private var gridY = 0f
@@ -91,7 +91,7 @@ class HomeScreen(
         )
 
         fontItems.dispose()
-        fontItems = ctx.createFont((gridY * 0.3f).toInt())
+        fontItems = ctx.a.createFont((gridY * 0.3f).toInt())
         fcItems = BitmapFontCache(fontItems)
         fcItems.addText("1.", baseX * 0.2f, gridY * 5 + fontItems.lineHeight * 1.5f, baseX * 0.7f, Align.right, false)
         fcItems.addText("2.", baseX * 0.2f, gridY * 4 + fontItems.lineHeight * 1.5f, baseX * 0.7f, Align.right, false)

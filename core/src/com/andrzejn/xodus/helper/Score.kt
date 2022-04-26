@@ -94,7 +94,7 @@ class Score(
         if (this.fontHeight != fontHeight) {
             if (this::font.isInitialized) // Check if lateinit property has been initialized
                 font.dispose()
-            font = ctx.createFont(fontHeight)
+            font = ctx.a.createFont(fontHeight)
             this.fontHeight = fontHeight
             fcPoints = BitmapFontCache(font)
             fcMoves = BitmapFontCache(font)

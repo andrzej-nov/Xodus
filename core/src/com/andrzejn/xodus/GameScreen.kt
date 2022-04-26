@@ -86,14 +86,14 @@ class GameScreen(
      */
     private lateinit var shredder: Shredder
 
-    private val chaos = Sprite(ctx.chaos)
-    private val logo = Sprite(ctx.logo).apply { setAlpha(0.5f) }
-    private val play = Sprite(ctx.play).apply { setAlpha(0.8f) }
-    private val playblue = Sprite(ctx.playblue).apply { setAlpha(0.8f) }
-    private val help = Sprite(ctx.help).apply { setAlpha(0.8f) }
-    private val ok = Sprite(ctx.ok).apply { setAlpha(0.8f) }
-    private val settings = Sprite(ctx.settings).apply { setAlpha(0.8f) }
-    private val exit = Sprite(ctx.exit).apply { setAlpha(0.8f) }
+    private val chaos = Sprite(ctx.a.chaos)
+    private val logo = Sprite(ctx.a.logo).apply { setAlpha(0.5f) }
+    private val play = Sprite(ctx.a.play).apply { setAlpha(0.8f) }
+    private val playblue = Sprite(ctx.a.playblue).apply { setAlpha(0.8f) }
+    private val help = Sprite(ctx.a.help).apply { setAlpha(0.8f) }
+    private val ok = Sprite(ctx.a.ok).apply { setAlpha(0.8f) }
+    private val settings = Sprite(ctx.a.settings).apply { setAlpha(0.8f) }
+    private val exit = Sprite(ctx.a.exit).apply { setAlpha(0.8f) }
 
     init {
         ctx.setTheme()

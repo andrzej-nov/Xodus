@@ -22,7 +22,7 @@ class Main : KtxGame<KtxScreen>() {
         //graphics.isContinuousRendering = true
         ctx.gs.reset()
         ctx.setTheme()
-        ctx.reloadAtlas()
+        ctx.a.reloadAtlas()
         ctx.initBatch() // OpegGL batch objects are heavy. Usually you just need to create one or few of them
         // on the app start and retain them until the end
         addScreen(GameScreen(ctx))
@@ -47,7 +47,7 @@ class Main : KtxGame<KtxScreen>() {
      */
     override fun resume() {
         super.resume()
-        ctx.reloadAtlas()
+        ctx.a.reloadAtlas()
         ctx.initBatch()
         newOrSavedGame()
     }

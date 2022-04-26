@@ -45,12 +45,12 @@ class CreditsScreen(
 
     private var gridX = 0f
     private var gridY = 0f
-    private val logo = Sprite(ctx.logo)
-    private val icongmail = Sprite(ctx.icongmail)
-    private val icontelegram = Sprite(ctx.icontelegram)
-    private val icongithub = Sprite(ctx.icongithub)
-    private val exit = Sprite(ctx.exit)
-    private val settings = Sprite(ctx.settings)
+    private val logo = Sprite(ctx.a.logo)
+    private val icongmail = Sprite(ctx.a.icongmail)
+    private val icontelegram = Sprite(ctx.a.icontelegram)
+    private val icongithub = Sprite(ctx.a.icongithub)
+    private val exit = Sprite(ctx.a.exit)
+    private val settings = Sprite(ctx.a.settings)
 
     /**
      * Invoked on each screen resize
@@ -91,7 +91,7 @@ class CreditsScreen(
             (gridY - settings.height) / 2
         )
         font.dispose()
-        font = ctx.createFont((icongmail.height * 0.5).toInt())
+        font = ctx.a.createFont((icongmail.height * 0.5).toInt())
         fcText = BitmapFontCache(font)
         fcText.setText("andrzej.novosiolov@gmail.com", gridX * 1.7f, gridY * 5.5f, gridX * 5f, Align.left, false)
         fcText.addText("t.me/Andrzejn", gridX * 1.7f, gridY * 4.5f, gridX * 5f, Align.left, false)
