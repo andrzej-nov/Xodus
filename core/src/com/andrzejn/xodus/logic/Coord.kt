@@ -1,6 +1,11 @@
 package com.andrzejn.xodus.logic
 
 /**
+ * Magical number meaning the coord is not set
+ */
+const val unsetCoord: Int = -999
+
+/**
  * Similar to Vector2 class but holds integer coordinates, to specify a tile position on the grid or something of
  * that kind.
  */
@@ -8,11 +13,11 @@ class Coord(
     /**
      * Horizontal position
      */
-    var x: Int = -1,
+    var x: Int = unsetCoord,
     /**
      * Vertical position
      */
-    var y: Int = -1
+    var y: Int = unsetCoord
 ) {
     /**
      * Set this coord equal to the one passed as the parameter. Returns this instance to allow chained calls.
@@ -70,22 +75,22 @@ class Coord(
     }
 
     /**
-     * True if both coordinates are >=0
+     * True if both coordinates are not unsetCoord
      */
     fun isSet(): Boolean {
-        return x >= 0 && y >= 0
+        return x != unsetCoord && y != unsetCoord
     }
 
     /**
-     * True if both coordinates are -1
+     * True if both coordinates are unsetCoord
      */
     fun isNotSet(): Boolean {
-        return x == -1 && y == -1
+        return x == unsetCoord && y == unsetCoord
     }
 
     fun unSet(): Coord {
-        x = -1
-        y = -1
+        x = unsetCoord
+        y = unsetCoord
         return this
     }
 

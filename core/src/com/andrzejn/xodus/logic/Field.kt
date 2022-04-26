@@ -360,12 +360,15 @@ class Field(
         openSelector.forEach { it.render(ctx) }
     }
 
+    private val v = Vector2()
+
     /**
      * Check if the given pointer screen coordinates match some of the active selector arrows.
      * It there is a match, respective selector is set and the track extended.
      * Returns true if there was the selector match.
      */
-    fun selectorsHitTest(v: Vector2): Boolean {
+    fun selectorsHitTest(vf: Vector2): Boolean {
+        v.set(ctx.clipWrapCoord(vf.x), ctx.clipWrapCoord(vf.y))
         openSelector.toTypedArray().reversed().forEach {
             if (it.selectorClicked(v)) {
                 clickedSelectorColors.add(it.selectorColor)

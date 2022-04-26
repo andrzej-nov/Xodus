@@ -233,20 +233,16 @@ class GameScreen(
         }
         if (!ctx.batch.isDrawing) ctx.batch.begin()
         val sideLen = ctx.sideLen
-        ctx.drawToField()
-        ctx.sd.setColor(ctx.theme.gameboardBackground)
-        ctx.sd.filledRectangle(-sideLen, -sideLen, ctx.wholeFieldSize + sideLen * 2, ctx.wholeFieldSize + sideLen * 2)
-        c.set(ctx.toFieldIndex(ctx.pointerPositionField(input.x, input.y)))
-        if (c.isSet()) {
-            v.set(ctx.toFieldCellCorner(c))
-            ctx.sd.filledRectangle(v.x, v.y, sideLen, sideLen, ctx.theme.cellHilight)
-        }
-        renderFieldGrid()
-        field.shredBalls { shredder.shreddedBalls(it) }
-        field.render()
-        shredder.render(ctx)
+        renderField(sideLen)
         ctx.batch.flush()
+        renderScreen(sideLen)
+        if (ctx.batch.isDrawing) ctx.batch.end()
+    }
 
+    /**
+     * Render on screen viewport
+     */
+    private fun renderScreen(sideLen: Float) {
         ctx.drawToScreen()
         logo.draw(ctx.batch)
         chaos.draw(ctx.batch)
@@ -255,14 +251,31 @@ class GameScreen(
         ctx.sd.setColor(ctx.theme.settingSeparator)
         ctx.sd.circle(newTilePos.x, newTilePos.y, sideLen * 0.9f, 1f)
         floatingTile.render()
-        if (field.noMoreBalls()) play.draw(ctx.batch)
-        else playblue.draw(ctx.batch)
+        if (field.noMoreBalls()) play.draw(ctx.batch) else playblue.draw(ctx.batch)
         help.draw(ctx.batch)
         settings.draw(ctx.batch)
         exit.draw(ctx.batch)
         ok.draw(ctx.batch)
         ctx.score.draw(ctx.batch)
-        if (ctx.batch.isDrawing) ctx.batch.end()
+    }
+
+    /**
+     * Render on field viewport
+     */
+    private fun renderField(sideLen: Float) {
+        ctx.drawToField()
+        ctx.sd.setColor(ctx.theme.gameboardBackground)
+        ctx.sd.filledRectangle(-sideLen, -sideLen, ctx.wholeFieldSize + sideLen * 2, ctx.wholeFieldSize + sideLen * 2)
+        c.set(ctx.toFieldIndex(ctx.pointerPositionField(input.x, input.y)))
+        if (c.isSet()) {
+            v.set(ctx.toFieldCellCorner(c))
+            println("${input.x} ${c.x} ${v.x}")
+            ctx.sd.filledRectangle(v.x, v.y, sideLen, sideLen, ctx.theme.cellHilight)
+        }
+        renderFieldGrid()
+        field.shredBalls { shredder.shreddedBalls(it) }
+        field.render()
+        shredder.render(ctx)
     }
 
     private fun renderFieldGrid() {

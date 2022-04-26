@@ -22,6 +22,7 @@ import com.badlogic.gdx.utils.viewport.*
 import ktx.assets.Asset
 import ktx.assets.loadOnDemand
 import space.earlygrey.shapedrawer.ShapeDrawer
+import kotlin.math.floor
 
 /**
  * Holds all application-wide objects.
@@ -158,11 +159,16 @@ class Context(
         c.set(clipWrap(crd.x - scrollOffset.x), clipWrap(crd.y - scrollOffset.y))
 
     /**
-     * Convert the provided coords from the logical field tile indexes to the cell pointed on the screen
+     * Convert the provided coords from the logical field tile indexes to the cell pointed on the field
      * Returns the converted coord for chaining.
      */
     fun tileIndexToFieldIndex(crd: Coord): Coord =
         c.set(clipWrap(crd.x + scrollOffset.x), clipWrap(crd.y + scrollOffset.y))
+
+    /**
+     * Convert the provided Y coord from the logical field tile index to the cell pointed on the field
+     */
+    fun tileYToFieldY(y: Float): Float = clipWrap(y + scrollOffset.y)
 
     /**
      * Converts screen cell indexes to the bottom-left screen coordinates to draw the rectangle
@@ -195,7 +201,7 @@ class Context(
         if (v.x !in field.screenX.toFloat()..field.screenX.toFloat() + wholeFieldSize ||
             v.y !in field.screenY.toFloat()..field.screenY.toFloat() + wholeFieldSize
         ) return c.unSet()
-        return c.set(((v.x - field.screenX) / sideLen).toInt(), ((v.y - field.screenY) / sideLen).toInt())
+        return c.set(floor((v.x - field.screenX) / sideLen).toInt(), floor((v.y - field.screenY) / sideLen).toInt())
     }
 
     /**
@@ -204,7 +210,7 @@ class Context(
      */
     fun toFieldIndex(v: Vector2): Coord {
         if (v.x !in -sideLen..wholeFieldSize + sideLen || v.y !in -sideLen..wholeFieldSize + sideLen) return c.unSet()
-        return c.set((v.x / sideLen).toInt(), (v.y / sideLen).toInt())
+        return c.set(floor(v.x / sideLen).toInt(), floor(v.y / sideLen).toInt())
     }
 
     /**
@@ -264,6 +270,17 @@ class Context(
             return x + ((-(x + 1) / fieldSize).toInt() + 1) * fieldSize
         if (x >= fieldSize)
             return x - (x / fieldSize).toInt() * fieldSize
+        return x
+    }
+
+    /**
+     * Ensures the field coord is within (0  until wholeFieldSize), wrapping through another side as necessary.
+     */
+    fun clipWrapCoord(x: Float): Float {
+        if (x < 0)
+            return x + wholeFieldSize
+        if (x >= wholeFieldSize)
+            return x - wholeFieldSize
         return x
     }
 

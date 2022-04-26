@@ -73,7 +73,7 @@ class Shredder(fieldSize: Int) {
         val prevY = y.toInt()
         val cameraX = ctx.fieldCamPos.x
         val cameraY = ctx.fieldCamPos.y
-        val advanceBy = 0.75f
+        val advanceBy = 2f / 3
         val advanceDuration = 1f
         Timeline.createSequence()
             .beginParallel()
@@ -96,15 +96,15 @@ class Shredder(fieldSize: Int) {
      */
     fun render(ctx: Context) {
         val screenX = -ctx.sideLen
-        val yScrolled = ctx.clipWrap(y + ctx.scrollOffset.y)
-        val screenY = yScrolled * ctx.sideLen
+        val fieldY = ctx.tileYToFieldY(y)
+        val screenY = fieldY * ctx.sideLen
         val width = ctx.wholeFieldSize + 2 * ctx.sideLen
         val lineWidth = width / 100
         val dash = width / 10
         dashedLines(ctx, screenX, screenY, lineWidth, width, dash)
-        if (yScrolled in 0f..1f)
+        if (fieldY < 1f)
             dashedLines(ctx, screenX, screenY + ctx.wholeFieldSize, lineWidth, width, dash)
-        else if (yScrolled in (ctx.gs.fieldSize - 2).toFloat()..(ctx.gs.fieldSize - 1).toFloat())
+        else if (fieldY > (ctx.gs.fieldSize - 2).toFloat())
             dashedLines(ctx, screenX, screenY - ctx.wholeFieldSize, lineWidth, width, dash)
     }
 
