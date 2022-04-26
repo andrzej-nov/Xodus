@@ -73,7 +73,7 @@ class Shredder(fieldSize: Int) {
         val prevY = y.toInt()
         val cameraX = ctx.fieldCamPos.x
         val cameraY = ctx.fieldCamPos.y
-        val advanceBy = 2f / 3
+        val advanceBy = ctx.gs.shredderSpeed
         val advanceDuration = 1f
         Timeline.createSequence()
             .beginParallel()

@@ -10,6 +10,7 @@ class GameSettings {
     private val sFIELDSIZE = "fieldSize"
     private val sCHAOSMOVES = "chaosMoves"
     private val sREINCARNATION = "reincarnation"
+    private val sSHREDDERSPEED = "shredderSpeed"
     private val sSAVEDGAME = "savedGame"
     private val sDARKTHEME = "darkTheme"
     private val sINGAMEDURATION = "inGameDuration"
@@ -17,6 +18,7 @@ class GameSettings {
     private val sRECORDPOINTS = "recordPoints"
     private var iFieldSize: Int = 7
     private var iChaosMoves: Int = 1
+    private var iShredderSpeed: Float = 2f / 3
     private var iReincarnation: Boolean = true
     private var iDarkTheme: Boolean = true
     private var iInGameDuration: Long = 0
@@ -33,12 +35,37 @@ class GameSettings {
         chaosMoves = iChaosMoves
         iReincarnation = pref.getBoolean(sREINCARNATION, true)
         reincarnation = iReincarnation
+        iShredderSpeed = when (pref.getInteger(sSHREDDERSPEED, 2)) {
+            1 -> 1f / 2
+            3 -> 3f / 4
+            else -> 2f / 3
+        }
+        shredderSpeed = iShredderSpeed
         iDarkTheme = pref.getBoolean(sDARKTHEME, true)
         iInGameDuration = pref.getLong(sINGAMEDURATION, 0)
     }
 
     /**
-     * Maximum connector radius, 3..6
+     *  Schredder line speed, 1/2, 2/3 or 3/4, encoded as 1..3
+     */
+    var shredderSpeed: Float
+        get() = iShredderSpeed
+        set(value) {
+            iShredderSpeed = value
+            pref.putInteger(sSHREDDERSPEED, shredderSpeedToInt(value))
+        }
+
+    /**
+     * Encode shredder speed to integer code
+     */
+    private fun shredderSpeedToInt(speed: Float) = when (speed) {
+        in 0f..0.6f -> 1
+        in 0.7f..1f -> 3
+        else -> 2
+    }
+
+    /**
+     * Field size, 7, 9, 11
      */
     var fieldSize: Int
         get() = iFieldSize
@@ -60,7 +87,7 @@ class GameSettings {
         }
 
     /**
-     * Number of different colors used for ball sockets. 6..7
+     * Is ball reincarnation allowed
      */
     var reincarnation: Boolean
         get() = iReincarnation
@@ -106,7 +133,7 @@ class GameSettings {
      * Key name for storing the records for the current tile type - game size - colors
      */
     private fun keyName(prefix: String): String {
-        return "$prefix$iChaosMoves$iFieldSize$iReincarnation}"
+        return "$prefix$iChaosMoves$iFieldSize${shredderSpeedToInt(iShredderSpeed)}$iReincarnation}"
     }
 
     /**
