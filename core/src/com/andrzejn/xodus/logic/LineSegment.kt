@@ -73,7 +73,7 @@ class LineSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
      * Render this segment, overriding color and line width
      */
     override fun render(ctx: Context, clr: Color, lWidth: Float) {
-        ctx.renderWithFieldBorders(
+        ctx.cp.renderWithFieldBorders(
             vbase.set(Vector2.Zero),
             tile.coord
         ) {
@@ -86,7 +86,7 @@ class LineSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
      * Render this segment
      */
     override fun render(ctx: Context) {
-        ctx.renderWithFieldBorders(
+        ctx.cp.renderWithFieldBorders(
             vbase.set(Vector2.Zero),
             tile.coord
         ) {

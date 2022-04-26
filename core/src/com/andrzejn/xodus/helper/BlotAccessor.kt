@@ -2,7 +2,6 @@ package com.andrzejn.xodus.helper
 
 import aurelienribon.tweenengine.TweenAccessor
 import com.andrzejn.xodus.logic.Blot
-import com.andrzejn.xodus.logic.Field
 
 /**
  * Tween balls moving position

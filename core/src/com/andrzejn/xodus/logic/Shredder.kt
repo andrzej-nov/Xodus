@@ -80,11 +80,11 @@ class Shredder(fieldSize: Int) {
             .push(Tween.to(this, TW_Y, advanceDuration).target(y + advanceBy))
             .push(
                 Tween.to(ctx.fieldCamPos, TW_POS_XY, advanceDuration)
-                    .target(cameraX, cameraY + advanceBy * ctx.sideLen)
+                    .target(cameraX, cameraY + advanceBy * ctx.cp.sideLen)
             )
             .end()
             .setCallback { _, _ ->
-                y = ctx.clipWrap(y)
+                y = ctx.cp.clipWrap(y)
                 if (y.toInt() != prevY)
                     scrollUp()
                 inAdvance = false
@@ -95,17 +95,17 @@ class Shredder(fieldSize: Int) {
      * Render the Shredder line
      */
     fun render(ctx: Context) {
-        val screenX = -ctx.sideLen
-        val fieldY = ctx.tileYToFieldY(y)
-        val screenY = fieldY * ctx.sideLen
-        val width = ctx.wholeFieldSize + 2 * ctx.sideLen
+        val screenX = -ctx.cp.sideLen
+        val fieldY = ctx.cp.tileYToFieldY(y)
+        val screenY = fieldY * ctx.cp.sideLen
+        val width = ctx.cp.wholeFieldSize + 2 * ctx.cp.sideLen
         val lineWidth = width / 100
         val dash = width / 10
         dashedLines(ctx, screenX, screenY, lineWidth, width, dash)
         if (fieldY < 1f)
-            dashedLines(ctx, screenX, screenY + ctx.wholeFieldSize, lineWidth, width, dash)
+            dashedLines(ctx, screenX, screenY + ctx.cp.wholeFieldSize, lineWidth, width, dash)
         else if (fieldY > (ctx.gs.fieldSize - 2).toFloat())
-            dashedLines(ctx, screenX, screenY - ctx.wholeFieldSize, lineWidth, width, dash)
+            dashedLines(ctx, screenX, screenY - ctx.cp.wholeFieldSize, lineWidth, width, dash)
     }
 
     private fun dashedLines(

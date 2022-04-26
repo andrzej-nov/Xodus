@@ -93,7 +93,7 @@ class Blot(
         val tilePos = baseTile.basePos
         val radius = baseTile.sideLen / radiusFactor
         blots.forEach { b ->
-            ctx.renderWithFieldBorders(
+            ctx.cp.renderWithFieldBorders(
                 v.set(b).scl(scatter).add(basePos).scl(baseTile.sideLen).add(tilePos),
                 baseTile.coord
             ) { ctx.sd.filledCircle(it, radius) }

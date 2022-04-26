@@ -78,7 +78,7 @@ class Field(
     /**
      * Apply given lambda to all tiles
      */
-    fun applyToAllTiles(lambda: (Tile) -> Unit): Unit = flatTile.forEach { lambda(it) }
+    private fun applyToAllTiles(lambda: (Tile) -> Unit): Unit = flatTile.forEach { lambda(it) }
 
     /**
      * Prepare field for new game.
@@ -103,7 +103,7 @@ class Field(
      * Set basePos for all tiles according to current scroll position.
      */
     fun updateTilePositions() = applyToAllTiles { t ->
-        ctx.setTileBasePos(t.coord, t.basePos)
+        ctx.cp.setTileBasePos(t.coord, t.basePos)
         t.intent.forEach { i -> i.resetSelectorArrows() }
     }
 
@@ -320,10 +320,10 @@ class Field(
     ): Pair<Tile, Side> {
         val currentCoord = currentTile.coord
         return when (currentSide) {
-            Side.Top -> tile[currentCoord.x][ctx.clipWrap(currentCoord.y + 1)]
-            Side.Right -> tile[ctx.clipWrap(currentCoord.x + 1)][currentCoord.y]
-            Side.Bottom -> tile[currentCoord.x][ctx.clipWrap(currentCoord.y - 1)]
-            Side.Left -> tile[ctx.clipWrap(currentCoord.x - 1)][currentCoord.y]
+            Side.Top -> tile[currentCoord.x][ctx.cp.clipWrap(currentCoord.y + 1)]
+            Side.Right -> tile[ctx.cp.clipWrap(currentCoord.x + 1)][currentCoord.y]
+            Side.Bottom -> tile[currentCoord.x][ctx.cp.clipWrap(currentCoord.y - 1)]
+            Side.Left -> tile[ctx.cp.clipWrap(currentCoord.x - 1)][currentCoord.y]
         } to currentSide.otherSide
     }
 
@@ -368,7 +368,7 @@ class Field(
      * Returns true if there was the selector match.
      */
     fun selectorsHitTest(vf: Vector2): Boolean {
-        v.set(ctx.clipWrapCoord(vf.x), ctx.clipWrapCoord(vf.y))
+        v.set(ctx.cp.clipWrapCoord(vf.x), ctx.cp.clipWrapCoord(vf.y))
         openSelector.toTypedArray().reversed().forEach {
             if (it.selectorClicked(v)) {
                 clickedSelectorColors.add(it.selectorColor)

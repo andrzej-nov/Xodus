@@ -104,7 +104,7 @@ class Ball(
      */
     fun render(ctx: Context) {
         val defaultAngle = directionAngle[movingFromSide] ?: return
-        ctx.renderWithFieldBorders(
+        ctx.cp.renderWithFieldBorders(
             v.set(currentPosition).add(tile.basePos),
             tile.coord
         ) {

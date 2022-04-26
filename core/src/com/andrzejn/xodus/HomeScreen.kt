@@ -73,18 +73,18 @@ class HomeScreen(
         gridY = baseHeight / 8
         radius = min(2 * gridX, gridY) * 0.4f
 
-        ctx.fitToRect(logo, baseWidth, 2 * gridY * 0.8f)
+        ctx.cp.fitToRect(logo, baseWidth, 2 * gridY * 0.8f)
         logo.setPosition(
             (baseWidth - logo.width) / 2 + baseX,
             gridY * 7 - logo.height / 2
         )
 
-        ctx.fitToRect(darktheme, 3 * gridX * 0.7f, gridY * 0.7f)
+        ctx.cp.fitToRect(darktheme, 3 * gridX * 0.7f, gridY * 0.7f)
         darktheme.setPosition(
             4 * gridX - darktheme.width / 2 + baseX,
             gridY * 2 + (gridY - darktheme.height) / 2
         )
-        ctx.fitToRect(lighttheme, 3 * gridX * 0.7f, gridY * 0.7f)
+        ctx.cp.fitToRect(lighttheme, 3 * gridX * 0.7f, gridY * 0.7f)
         lighttheme.setPosition(
             8 * gridX - lighttheme.width / 2 + baseX,
             gridY * 2 + (gridY - lighttheme.height) / 2
@@ -99,18 +99,18 @@ class HomeScreen(
         fcItems.addText("4.", baseX * 0.2f, gridY * 2 + fontItems.lineHeight * 1.5f, baseX * 0.7f, Align.right, false)
         fcItems.setColors(ctx.theme.settingItem)
 
-        ctx.fitToRect(gear, 2 * gridX * 0.5f, gridY * 0.5f)
-        ctx.fitToRect(play, 4 * gridX * 0.8f, 2 * gridY * 0.8f)
+        ctx.cp.fitToRect(gear, 2 * gridX * 0.5f, gridY * 0.5f)
+        ctx.cp.fitToRect(play, 4 * gridX * 0.8f, 2 * gridY * 0.8f)
         play.setPosition(
             6 * gridX - play.width / 2 + baseX,
             (2 * gridY - play.height) / 2
         )
-        ctx.fitToRect(exit, 2 * gridX * 0.8f, gridY * 0.8f)
+        ctx.cp.fitToRect(exit, 2 * gridX * 0.8f, gridY * 0.8f)
         exit.setPosition(
             11 * gridX - exit.width / 2 + baseX,
             (gridY - exit.height) / 2
         )
-        ctx.fitToRect(info, 2 * gridX * 0.8f, gridY * 0.8f)
+        ctx.cp.fitToRect(info, 2 * gridX * 0.8f, gridY * 0.8f)
         info.setPosition(
             gridX - info.width / 2 + baseX,
             (gridY - info.height) / 2
@@ -205,7 +205,7 @@ class HomeScreen(
          * (at the end of the method)
          */
         override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-            val v = ctx.pointerPositionScreen(Gdx.input.x, Gdx.input.y)
+            val v = ctx.cp.pointerPositionScreen(Gdx.input.x, Gdx.input.y)
             if (v.x < 0 || v.y < 0)
                 return super.touchDown(screenX, screenY, pointer, button)
             v.x -= baseX

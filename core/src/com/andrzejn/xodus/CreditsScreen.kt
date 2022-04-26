@@ -60,32 +60,32 @@ class CreditsScreen(
         gridX = Gdx.graphics.width.toFloat()
         gridY = Gdx.graphics.height.toFloat()
 
-        ctx.fitToRect(logo, Gdx.graphics.width.toFloat(), 2 * gridY * 0.8f)
+        ctx.cp.fitToRect(logo, Gdx.graphics.width.toFloat(), 2 * gridY * 0.8f)
         logo.setPosition(
             (Gdx.graphics.width - logo.width) / 2,
             gridY * 8 - logo.height / 2
         )
-        ctx.fitToRect(icongmail, gridX * 0.9f, gridY * 0.9f)
+        ctx.cp.fitToRect(icongmail, gridX * 0.9f, gridY * 0.9f)
         icongmail.setPosition(
             gridX - icongmail.width / 2,
             gridY * 5 + (gridY - icongmail.height) / 2
         )
-        ctx.fitToRect(icontelegram, gridX * 0.9f, gridY * 0.9f)
+        ctx.cp.fitToRect(icontelegram, gridX * 0.9f, gridY * 0.9f)
         icontelegram.setPosition(
             gridX - icontelegram.width / 2,
             gridY * 4 + (gridY - icontelegram.height) / 2
         )
-        ctx.fitToRect(icongithub, gridX * 0.9f, gridY * 0.9f)
+        ctx.cp.fitToRect(icongithub, gridX * 0.9f, gridY * 0.9f)
         icongithub.setPosition(
             gridX - icongithub.width / 2,
             gridY * 3 + (gridY - icongithub.height) / 2
         )
-        ctx.fitToRect(exit, gridX * 0.9f, gridY * 0.9f)
+        ctx.cp.fitToRect(exit, gridX * 0.9f, gridY * 0.9f)
         exit.setPosition(
             7 * gridX - exit.width / 2,
             (gridY - exit.height) / 2
         )
-        ctx.fitToRect(settings, gridX * 0.9f, gridY * 0.9f)
+        ctx.cp.fitToRect(settings, gridX * 0.9f, gridY * 0.9f)
         settings.setPosition(
             gridX - settings.width / 2,
             (gridY - settings.height) / 2
@@ -145,7 +145,7 @@ class CreditsScreen(
          * Handle clicks/presses
          */
         override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-            val v = ctx.pointerPositionScreen(Gdx.input.x, Gdx.input.y)
+            val v = ctx.cp.pointerPositionScreen(Gdx.input.x, Gdx.input.y)
 
             if (v.y in 5f * gridY..6f * gridY)
                 Gdx.net.openURI("mailto:andrzej.novosiolov@gmail.com?subject=The%20Xodus%20game")

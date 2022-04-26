@@ -87,7 +87,7 @@ class MoveIntent(
             directionArrows = buildDirectionArrows()
         val arrows = directionArrows ?: return
         segments.forEach { it.render(ctx, ctx.theme.dark[selectorColor], 2f) }
-        ctx.renderWithFieldBorders(
+        ctx.cp.renderWithFieldBorders(
             v.set(Vector2.Zero),
             tile.coord
         ) {

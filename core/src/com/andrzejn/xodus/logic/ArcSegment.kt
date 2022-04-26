@@ -103,7 +103,7 @@ class ArcSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
      * Render this segment, overriding color and line width
      */
     override fun render(ctx: Context, clr: Color, lWidth: Float) {
-        ctx.renderWithFieldBorders(
+        ctx.cp.renderWithFieldBorders(
             v.set(center).add(tile.basePos),
             tile.coord
         ) {
@@ -118,7 +118,7 @@ class ArcSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
      * Render this segment
      */
     override fun render(ctx: Context) {
-        ctx.renderWithFieldBorders(
+        ctx.cp.renderWithFieldBorders(
             vdraw.set(center).add(tile.basePos),
             tile.coord
         ) {

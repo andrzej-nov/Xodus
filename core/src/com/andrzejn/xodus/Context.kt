@@ -4,7 +4,6 @@ import aurelienribon.tweenengine.Tween
 import aurelienribon.tweenengine.TweenManager
 import com.andrzejn.xodus.helper.*
 import com.andrzejn.xodus.logic.Blot
-import com.andrzejn.xodus.logic.Coord
 import com.andrzejn.xodus.logic.Field
 import com.andrzejn.xodus.logic.Shredder
 import com.badlogic.gdx.Gdx
@@ -22,7 +21,6 @@ import com.badlogic.gdx.utils.viewport.*
 import ktx.assets.Asset
 import ktx.assets.loadOnDemand
 import space.earlygrey.shapedrawer.ShapeDrawer
-import kotlin.math.floor
 
 /**
  * Holds all application-wide objects.
@@ -45,12 +43,12 @@ class Context(
     /**
      * The main screen viewport
      */
-    private val screen: ScreenViewport = ScreenViewport()
+    val screen: ScreenViewport = ScreenViewport()
 
     /**
      * Viewport for the game field
      */
-    private lateinit var field: ScalingViewport
+    lateinit var field: ScalingViewport
 
     /**
      * Drawer for geometric shapes on the screens
@@ -66,6 +64,11 @@ class Context(
      * The game settings
      */
     val gs: GameSettings = GameSettings()
+
+    /**
+     * Various coordinate processing and translations methods
+     */
+    var cp: CoordProcessor = CoordProcessor(this)
 
     /**
      * The game score tracker
@@ -94,197 +97,6 @@ class Context(
     }
 
     /**
-     * Fit a sprite into given rectangle, retaining proportions
-     */
-    fun fitToRect(s: Sprite, wBound: Float, hBound: Float) {
-        var width = wBound
-        var height = wBound * s.regionHeight / s.regionWidth
-        if (height > hBound) {
-            height = hBound
-            width = hBound * s.regionWidth / s.regionHeight
-        }
-        s.setSize(width, height)
-    }
-
-    /**
-     * Logical field coords to screen coords offset.
-     * E.g. if the field has been visually scrolled by 1 cell to the right, then scrollOffset.x = 1
-     */
-    val scrollOffset: Coord = Coord(0, 0)
-    private val bottomLeft = Coord(0, 0)
-    private val topRight = Coord(gs.fieldSize - 1, gs.fieldSize - 1)
-
-    /**
-     * Reset scroll offset to zero
-     */
-    fun resetScrollOffset() {
-        scrollOffset.set(0, 0)
-        if (this::field.isInitialized) // Check if the lateinit property has been initialised already
-            field.camera.position.set(wholeFieldSize / 2, wholeFieldSize / 2, 0f)
-        bottomLeft.set(0, 0)
-        topRight.set(gs.fieldSize - 1, gs.fieldSize - 1)
-    }
-
-    /**
-     * Applies scrolling to the field
-     */
-    fun scrollFieldBy(change: Coord) {
-        fieldCamPos.x += sideLen * change.x
-        fieldCamPos.y += sideLen * change.y
-        scrollOffset.add(change)
-        bottomLeft.set(0, 0)
-        bottomLeft.set(fieldIndexToTileIndex(bottomLeft))
-        topRight.set(gs.fieldSize - 1, gs.fieldSize - 1)
-        topRight.set(fieldIndexToTileIndex(topRight))
-    }
-
-    /**
-     * The field cell side length
-     */
-    var sideLen: Float = 0f
-
-    /**
-     * Set the tile corner screen coordinates, considering scrolling
-     */
-    fun setTileBasePos(crd: Coord, basePos: Vector2) {
-        c.set(tileIndexToFieldIndex(crd))
-        basePos.set(c.x * sideLen, c.y * sideLen)
-    }
-
-    /**
-     * Convert the provided coords from the cell pointed on the screen to the logical field tile indexes.
-     * Returns the converted coord for chaining.
-     */
-    fun fieldIndexToTileIndex(crd: Coord): Coord =
-        c.set(clipWrap(crd.x - scrollOffset.x), clipWrap(crd.y - scrollOffset.y))
-
-    /**
-     * Convert the provided coords from the logical field tile indexes to the cell pointed on the field
-     * Returns the converted coord for chaining.
-     */
-    fun tileIndexToFieldIndex(crd: Coord): Coord =
-        c.set(clipWrap(crd.x + scrollOffset.x), clipWrap(crd.y + scrollOffset.y))
-
-    /**
-     * Convert the provided Y coord from the logical field tile index to the cell pointed on the field
-     */
-    fun tileYToFieldY(y: Float): Float = clipWrap(y + scrollOffset.y)
-
-    /**
-     * Converts screen cell indexes to the bottom-left screen coordinates to draw the rectangle
-     * Sets private var v to the same value
-     */
-    fun toScreenCellCorner(c: Coord): Vector2 {
-        val v = toFieldCellCorner(c)
-        v3.set(v.x, v.y, 0f)
-        field.project(v3)
-        return v.set(v3.x, v3.y)
-    }
-
-    /**
-     * Variables for internal calculations to reduce the GC load
-     */
-    private val v = Vector2()
-    private val c = Coord()
-
-    /**
-     * Converts screen cell indexes to the bottom-left screen coordinates to draw the rectangle
-     * Sets private var v to the same value
-     */
-    fun toFieldCellCorner(c: Coord): Vector2 = v.set(c.x.toFloat(), c.y.toFloat()).scl(sideLen)
-
-    /**
-     * Returns indexes of the screen cell pointed by touch/mouse. (-1, -1) of pointed otside of the field.
-     * Sets private var c to the same return value
-     */
-    fun toScreenIndex(v: Vector2): Coord {
-        if (v.x !in field.screenX.toFloat()..field.screenX.toFloat() + wholeFieldSize ||
-            v.y !in field.screenY.toFloat()..field.screenY.toFloat() + wholeFieldSize
-        ) return c.unSet()
-        return c.set(floor((v.x - field.screenX) / sideLen).toInt(), floor((v.y - field.screenY) / sideLen).toInt())
-    }
-
-    /**
-     * Returns indexes of the field cell pointed by touch/mouse. (-1, -1) of pointed otside of the field.
-     * Sets private var c to the same return value
-     */
-    fun toFieldIndex(v: Vector2): Coord {
-        if (v.x !in -sideLen..wholeFieldSize + sideLen || v.y !in -sideLen..wholeFieldSize + sideLen) return c.unSet()
-        return c.set(floor(v.x / sideLen).toInt(), floor(v.y / sideLen).toInt())
-    }
-
-    /**
-     * The whole field square size, in pixels
-     */
-    var wholeFieldSize: Float = 0f
-
-    /**
-     * Variable for internal calculations, to reduce GC load
-     */
-    private val vrend = Vector2()
-
-    /**
-     * Perform given render at given coordinates, and repeat it at respective duplicate positions
-     * if it is at the field border tile
-     */
-    fun renderWithFieldBorders(v: Vector2, c: Coord, renderIt: (Vector2) -> Unit) {
-        var xAtBorder = false
-        renderIt(v)
-        if (c.x == bottomLeft.x) {
-            xAtBorder = true
-            renderIt(vrend.set(v).add(wholeFieldSize, 0f))
-        } else if (c.x == topRight.x) {
-            xAtBorder = true
-            renderIt(vrend.set(v).add(-wholeFieldSize, 0f))
-        }
-        if (xAtBorder) {
-            if (c.y == bottomLeft.y)
-                renderIt(vrend.add(0f, wholeFieldSize))
-            else if (c.y == topRight.y)
-                renderIt(vrend.add(0f, -wholeFieldSize))
-        }
-        if (c.y == bottomLeft.y)
-            renderIt(vrend.set(v).add(0f, wholeFieldSize))
-        else if (c.y == topRight.y)
-            renderIt(vrend.set(v).add(0f, -wholeFieldSize))
-    }
-
-    /**
-     * Ensures the index is within (0  until fieldSize), wrapping through another side as necessary.
-     */
-    fun clipWrap(c: Int): Int {
-        val fieldSize = gs.fieldSize
-        if (c < 0)
-            return c + (-(c + 1) / fieldSize + 1) * fieldSize
-        if (c >= fieldSize)
-            return c - (c / fieldSize) * fieldSize
-        return c
-    }
-
-    /**
-     * Ensures the float index is within (0  until fieldSize), wrapping through another side as necessary.
-     */
-    fun clipWrap(x: Float): Float {
-        val fieldSize = gs.fieldSize
-        if (x < 0)
-            return x + ((-(x + 1) / fieldSize).toInt() + 1) * fieldSize
-        if (x >= fieldSize)
-            return x - (x / fieldSize).toInt() * fieldSize
-        return x
-    }
-
-    /**
-     * Ensures the field coord is within (0  until wholeFieldSize), wrapping through another side as necessary.
-     */
-    fun clipWrapCoord(x: Float): Float {
-        if (x < 0)
-            return x + wholeFieldSize
-        if (x >= wholeFieldSize)
-            return x - wholeFieldSize
-        return x
-    }
-
-    /**
      * Initialize the camera, batch and drawer that draw screens
      */
     fun initBatch() {
@@ -308,42 +120,38 @@ class Context(
      * Sets the game field viewport size and position
      */
     fun setFieldSize(basePos: Vector2) {
-        field = ScalingViewport(Scaling.none, wholeFieldSize, wholeFieldSize)
-        field.camera.position.set(Vector2(wholeFieldSize / 2, wholeFieldSize / 2), 0f)
-        field.setScreenBounds(basePos.x.toInt(), basePos.y.toInt(), wholeFieldSize.toInt(), wholeFieldSize.toInt())
+        field = ScalingViewport(Scaling.none, cp.wholeFieldSize, cp.wholeFieldSize)
+        field.setScreenBounds(
+            basePos.x.toInt(),
+            basePos.y.toInt(),
+            cp.wholeFieldSize.toInt(),
+            cp.wholeFieldSize.toInt()
+        )
+        centerFieldCamera()
     }
 
+    /**
+     * Center camera on the field viewport
+     */
+    fun centerFieldCamera() {
+        if (this::field.isInitialized) // Check if the lateinit property has been initialised already
+            field.camera.position.set(cp.wholeFieldSize / 2, cp.wholeFieldSize / 2, 0f)
+    }
+
+    fun drawToScreen() {
+        screen.apply()
+        batch.projectionMatrix = screen.camera.combined
+    }
+
+    fun drawToField() {
+        field.apply()
+        batch.projectionMatrix = field.camera.combined
+    }
 
     /**
      * A convenience shortcut
      */
     val fieldCamPos: Vector3 get() = this.field.camera.position
-
-    /**
-     * A variable for internal calculations, to reduce GC load
-     */
-    private val v3 = Vector3()
-    private val vpp = Vector2()
-    private val vppf = Vector2()
-
-    /**
-     * Convert the UI screen coordinates (mouse clicks or touches, for example) to the OpenGL scene coordinates
-     * which are used for drawing
-     */
-    fun pointerPositionScreen(screenX: Int, screenY: Int): Vector2 {
-        v3.set(screenX.toFloat(), screenY.toFloat(), 0f)
-        screen.unproject(v3)
-        return vpp.set(v3.x, v3.y)
-    }
-
-    /**
-     * Convert the UI screen coordinates (mouse clicks or touches, for example) to the OpenGL field coordinates
-     */
-    fun pointerPositionField(screenX: Int, screenY: Int): Vector2 {
-        v3.set(screenX.toFloat(), screenY.toFloat(), 0f)
-        field.unproject(v3)
-        return vppf.set(v3.x, v3.y)
-    }
 
 
     private lateinit var atlas: Asset<TextureAtlas>
@@ -506,16 +314,6 @@ class Context(
         if (this::batch.isInitialized)
             batch.dispose()
         score.dispose()
-    }
-
-    fun drawToScreen() {
-        screen.apply()
-        batch.projectionMatrix = screen.camera.combined
-    }
-
-    fun drawToField() {
-        field.apply()
-        batch.projectionMatrix = field.camera.combined
     }
 
 }

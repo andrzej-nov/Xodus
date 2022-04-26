@@ -43,28 +43,12 @@ class Coord(
     override fun equals(other: Any?): Boolean = (other is Coord) && this.x == other.x && this.y == other.y
 
     /**
-     * Subtracts another coord from this one. Returns this instance to allow chained calls.
-     */
-    fun sub(other: Coord): Coord {
-        this.x -= other.x
-        this.y -= other.y
-        return this
-    }
-
-    /**
      * Adds another coord to this one. Returns this instance to allow chained calls.
      */
     fun add(other: Coord): Coord {
         this.x += other.x
         this.y += other.y
         return this
-    }
-
-    /**
-     * True if both coordinates are 0
-     */
-    fun isZero(): Boolean {
-        return x == 0 && y == 0
     }
 
     /**

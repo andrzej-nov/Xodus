@@ -70,18 +70,9 @@ abstract class TrackSegment(
     fun ballPositionToSplit(b: Ball): Float =
         if (isMovingFromSegmentStart(b)) b.position else 1f - b.position
 
-    fun isMovingFromSegmentStart(b: Ball): Boolean = b.movingFromSide == type.sides[0]
+    private fun isMovingFromSegmentStart(b: Ball): Boolean = b.movingFromSide == type.sides[0]
 
-    fun aheadSideIndex(b: Ball): Int = if (isMovingFromSegmentStart(b)) 1 else 0
-
-    /**
-     * Colors the segment by the ball
-     */
-    fun setColorFrom(b: Ball) {
-        val ahead = aheadSideIndex(b)
-        color[ahead] = b.color
-        split = ballPositionToSplit(b)
-    }
+    private fun aheadSideIndex(b: Ball): Int = if (isMovingFromSegmentStart(b)) 1 else 0
 
     private var lineWidth: Float = 0f
 
