@@ -34,6 +34,7 @@ open class Atlas {
     val sizearrows: TextureRegion get() = texture("sizearrows")
     val playblue: TextureRegion get() = texture("playblue")
     val resume: TextureRegion get() = texture("resume")
+    val hand: TextureRegion get() = texture("hand")
 
     /**
      * Light (bright) colors palette for the tile lines

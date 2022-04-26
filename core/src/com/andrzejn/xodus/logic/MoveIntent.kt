@@ -145,6 +145,15 @@ class MoveIntent(
     }
 
     /**
+     * Approximate field coord of the direction arroe at given side
+     */
+    fun arrowCenter(side: Side): Vector2 {
+        if (directionArrows == null)
+            directionArrows = buildDirectionArrows()
+        return directionArrows!!.first { (s, _) -> s == side }.second.boundingRectangle.getCenter(v)
+    }
+
+    /**
      * Selector arrow coordinates, (fromSide to direction) to (triangle polygon vertices).
      * Multiply them to sideLen, plus basePos.
      */

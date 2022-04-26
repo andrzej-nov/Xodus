@@ -1,5 +1,6 @@
 package com.andrzejn.xodus
 
+import aurelienribon.tweenengine.Timeline
 import aurelienribon.tweenengine.Tween
 import com.andrzejn.xodus.helper.FloatingTile
 import com.andrzejn.xodus.helper.TW_POS_XY
@@ -94,6 +95,9 @@ class GameScreen(
     private val ok = Sprite(ctx.a.ok).apply { setAlpha(0.8f) }
     private val settings = Sprite(ctx.a.settings).apply { setAlpha(0.8f) }
     private val exit = Sprite(ctx.a.exit).apply { setAlpha(0.8f) }
+    private val hand = Sprite(ctx.a.hand).apply { setAlpha(0.5f) }
+
+    private var inAutoMove = false
 
     init {
         ctx.setTheme()
@@ -205,6 +209,8 @@ class GameScreen(
         else ok.setPosition(newTilePos.x + sideLen, newTilePos.y - sideLen / 2)
         ok.setSize(sideLen, sideLen)
         ctx.score.setCoords((sideLen / 2).toInt(), sideLen, width.toFloat())
+        hand.setSize(sideLen, sideLen)
+        hand.setOrigin(sideLen / 2, sideLen)
     }
 
     /**
@@ -256,6 +262,8 @@ class GameScreen(
         exit.draw(ctx.batch)
         ok.draw(ctx.batch)
         ctx.score.draw(ctx.batch)
+        if (inAutoMove)
+            hand.draw(ctx.batch)
     }
 
     /**
@@ -397,12 +405,66 @@ class GameScreen(
         field.advanceBalls({ chaosMove(ctx.gs.chaosMoves) }, { b -> shredder.currentBallDist(b) })
     }
 
+    private enum class MoveTarget {
+        NewTile, Selector, EndOfTurn
+    }
+
+    private val vf2 = Vector2()
+    private val c2 = Coord()
+
     /**
      * Show player a random move. Not the best one, and not always even a good one. Just a random one, to show
      * the game controls.
      */
-    private fun randomMove() {
-        TODO("Not yet implemented")
+    private fun autoMove() {
+        if (inAutoMove || ctx.tweenAnimationRunning())
+            return
+        val moveTargets = mutableListOf<MoveTarget>()
+        if (newTile != null) repeat(2) { moveTargets.add(MoveTarget.NewTile) }
+        if (field.openSelector.isNotEmpty())
+            repeat(5) { moveTargets.add(MoveTarget.Selector) }
+        moveTargets.add(MoveTarget.EndOfTurn)
+        val seq = Timeline.createSequence()
+        val mt = moveTargets.random()
+        when (mt) {
+            MoveTarget.NewTile -> {
+                val nT = newTile ?: return
+                c2.set(ctx.cp.tileIndexToFieldIndex(field.chaosTileCoord()))
+                vf2.set(ctx.cp.toScreenCellCorner(c2).add(0f, -ctx.cp.sideLen / 2))
+                seq.push(Tween.to(hand, TW_POS_XY, 1f).target(vf2.x, vf2.y))
+                    .pushPause(0.3f)
+                    .push(Tween.call { _, _ -> dropNewTileToField(c2, nT) })
+                    .pushPause(0.3f)
+            }
+            MoveTarget.Selector -> {
+                vf2.set(field.suggestOpenSelectorFieldCoord())
+                v.set(ctx.field.project(v.set(vf2))).sub(ctx.cp.sideLen / 2, ctx.cp.sideLen)
+                seq.push(Tween.to(hand, TW_POS_XY, 1f).target(v.x, v.y))
+                    .pushPause(0.3f)
+                    .push(Tween.call { _, _ -> field.selectorsHitTest(vf2) })
+                    .pushPause(0.3f)
+            }
+            MoveTarget.EndOfTurn -> {
+                ok.boundingRectangle.getCenter(v)
+                v.sub(ctx.cp.sideLen / 2, ctx.cp.sideLen)
+                seq.push(Tween.to(hand, TW_POS_XY, 1f).target(v.x, v.y))
+                    .pushPause(0.3f)
+                    .push(Tween.call { _, _ ->
+                        endOfTurn()
+                        inAutoMove = false
+                    })
+                    .pushPause(0.3f)
+            }
+        }
+        if (mt != MoveTarget.EndOfTurn)
+            seq.setCallback { _, _ ->
+                if (newTile == null && field.noMoreSelectors() && !field.noMoreBalls())
+                    endOfTurn()
+                inAutoMove = false
+            }
+        inAutoMove = true
+        hand.setOriginBasedPosition(help.x, help.y)
+        seq.start(ctx.tweenManager)
     }
 
     /**
@@ -468,7 +530,7 @@ class GameScreen(
                 buttonTouched(v, exit) -> Gdx.app.exit()
                 buttonTouched(v, settings) -> ctx.game.setScreen<HomeScreen>()
                 buttonTouched(v, ok) -> endOfTurn()
-                buttonTouched(v, help) -> randomMove()
+                buttonTouched(v, help) -> autoMove()
                 else -> if (dragFrom == DragSource.None || dragFrom == DragSource.NewTile || dragStart.dst(dragPos) < 4)
                 // The last condition is a safeguard against clicks with minor pointer slides that are erroneously
                 // interpreted as drags

@@ -40,7 +40,7 @@ class Field(
     /**
      * List of selectors that the player can (and should) select.
      */
-    private val openSelector = mutableListOf<MoveIntent>()
+    val openSelector = mutableListOf<MoveIntent>()
 
     /**
      * The list of selector colors already clicked on this move.
@@ -381,6 +381,17 @@ class Field(
         }
         killBalls(ballsToClear)
         openSelector.forEach { it.render(ctx) }
+    }
+
+    /**
+     * Field pointer coordinates of suitable open selector, for auto-move
+     */
+    fun suggestOpenSelectorFieldCoord(): Vector2 {
+        val selectorIntent =
+            openSelector.filter { it.tile in ball.map { b -> b.tile } }.ifEmpty { openSelector }.random()
+        val selectorSegments = selectorIntent.tile.segment.filter { s -> s.type.sides.contains(selectorIntent.side) }
+        return selectorIntent.arrowCenter(selectorSegments.filter { it.type.sides.contains(Side.Top) }
+            .ifEmpty { selectorSegments }.random().type.sides.first { it != selectorIntent.side })
     }
 
     private val v = Vector2()

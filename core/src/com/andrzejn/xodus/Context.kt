@@ -91,6 +91,7 @@ class Context(
         Tween.registerAccessor(Blot::class.java, BlotAccessor())
         Tween.registerAccessor(Shredder::class.java, ShredderAccessor())
         Tween.registerAccessor(Vector3::class.java, Vector3Accessor())
+        Tween.registerAccessor(Sprite::class.java, SpriteAccessor())
     }
 
     /**
