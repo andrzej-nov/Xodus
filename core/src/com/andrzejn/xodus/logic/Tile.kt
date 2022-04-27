@@ -2,6 +2,7 @@ package com.andrzejn.xodus.logic
 
 import com.andrzejn.xodus.Context
 import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.utils.StringBuilder
 
 /**
  * Square tile with track fragments on it. Once placed to the field, it is never moved until the whole bottom line
@@ -18,7 +19,7 @@ class Tile {
      * All four tile sides always have at least one segment ending at them (may be several segments when tracks split
      * or join at thet point).
      */
-    val segment: Array<TrackSegment> = randomSegments()
+    var segment: Array<TrackSegment> = randomSegments()
 
     /**
      * When balls are planning their movement from the tile side to another side, record its color,
@@ -95,5 +96,31 @@ class Tile {
      * Reset this segment colors.
      */
     fun clearSegmentColors(): Unit = segment.forEach { it.reset() }
+
+    /**
+     * Serialize tile segments
+     */
+    fun serialize(sb: StringBuilder) {
+        sb.append(segment.size)
+        segment.forEach { sb.append(it.type.ordinal) }
+        intent.forEach { it.serialize(sb) }
+    }
+
+    /**
+     * Deserialize tile segments
+     */
+    fun deserialize(s: String, i: Int): Int {
+        var j = i
+        segment = Array(s[j++].digitToInt()) {
+            TrackSegment.of(SegmentType.values()[s[j++].digitToInt()], this)
+        }
+        repeat(intent.size) {
+            with(intent[s[j].digitToInt()]) {
+                initialize()
+                j = deserialize(s, j + 1)
+            }
+        }
+        return j
+    }
 
 }

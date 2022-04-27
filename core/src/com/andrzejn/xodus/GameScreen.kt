@@ -15,6 +15,7 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.utils.StringBuilder
 import ktx.app.KtxScreen
 import ktx.app.clearScreen
 import java.util.*
@@ -101,33 +102,34 @@ class GameScreen(
 
     init {
         ctx.setTheme()
-        newGame(false)
     }
 
     /**
      * Start new game and load saved one if any
      */
     fun newGame(loadSavedGame: Boolean) {
-        ctx.score.reset()
         updateInGameDuration()
-        timeStart = Calendar.getInstance().timeInMillis
         ctx.cp.resetScrollOffset()
         shredder = Shredder(ctx.gs.fieldSize)
-        if (loadSavedGame) try {
+        ctx.score.reset()
+        if (loadSavedGame) /*try*/ {
             val s = ctx.sav.savedGame()
-            ctx.sav.loadSettingsAndScore(s)
-            //world.deserialize(s)
-        } catch (ex: Exception) {
-            // Something wrong. Just recreate new World and start new game
-            //world = World(ctx)
+            val i = ctx.sav.loadSettingsAndScore(s)
+            if (i > 0)
+                deserialize(s, i)
+            field.setSideLen(ctx.cp.sideLen) { t -> ctx.cp.setTileBasePos(t.coord, t.basePos) }
+            return
+/*        } catch (ex: Exception) {
+            newGame(false)
+            return*/
+            // Something wrong. Just proceed to recreate and start new game
         }
-        else {
-            field = Field(ctx).apply {
-                newGame()
-                setSideLen(ctx.cp.sideLen) { t -> ctx.cp.setTileBasePos(t.coord, t.basePos) }
-            }
-            createNewTile()
+        field = Field(ctx).apply {
+            newGame()
+            setSideLen(ctx.cp.sideLen) { t -> ctx.cp.setTileBasePos(t.coord, t.basePos) }
         }
+        createNewTile()
+        timeStart = Calendar.getInstance().timeInMillis
     }
 
     /**
@@ -152,10 +154,10 @@ class GameScreen(
      * Update the in-game time and save records.
      */
     override fun hide() {
-        super.hide()
         input.inputProcessor = null
         updateInGameDuration()
         ctx.score.saveRecords()
+        super.hide()
     }
 
     /**
@@ -165,6 +167,7 @@ class GameScreen(
     override fun pause() {
         updateInGameDuration()
         ctx.score.saveRecords()
+        ctx.sav.saveGame(this)
         super.pause()
     }
 
@@ -173,8 +176,9 @@ class GameScreen(
      */
     override fun resize(width: Int, height: Int) {
         super.resize(width, height)
+        if (width == 0 || height == 0) // Window minimize on desktop works that way
+            return
         ctx.setScreenSize(width, height)
-
         val sideLen =
             if (width > height) min(width.toFloat() / (ctx.gs.fieldSize + 4), height.toFloat() / ctx.gs.fieldSize)
             else min(width.toFloat() / ctx.gs.fieldSize, height.toFloat() / (ctx.gs.fieldSize + 4))
@@ -317,7 +321,7 @@ class GameScreen(
         }
         if (nT == null) return
         val coord = ctx.cp.toFieldIndex(vf)
-        if (coord.isNotSet()) cancelNewTileDrag(nT) else dropNewTileToField(coord, nT)
+        if (vf.y < 0 || coord.isNotSet()) cancelNewTileDrag(nT) else dropNewTileToField(coord, nT)
     }
 
     private fun dropNewTileToField(
@@ -373,6 +377,7 @@ class GameScreen(
             return
         if (move <= 0) {
             createNewTile()
+            ctx.sav.saveGame(this)
             return
         }
         val t = Tile().apply {
@@ -465,6 +470,23 @@ class GameScreen(
         inAutoMove = true
         hand.setOriginBasedPosition(help.x, help.y)
         seq.start(ctx.tweenManager)
+    }
+
+    fun serialize(sb: StringBuilder) {
+        ctx.serialize(sb)
+        ctx.cp.serialize(sb)
+        shredder.serialize(sb)
+        if (newTile == null) sb.append("-") else newTile?.serialize(sb)
+        field.serialize(sb)
+    }
+
+    private fun deserialize(s: String, i: Int) {
+        var j = ctx.deserialize(s, i)
+        j = ctx.cp.deserialize(s, j)
+        j = shredder.deserialize(s, j)
+        if (s[j] == '-') j++ else newTile = Tile().apply { j = this.deserialize(s, j) }
+        field = Field(ctx).apply { this.deserialize(s, j) }
+        resize(graphics.width, graphics.height)
     }
 
     /**

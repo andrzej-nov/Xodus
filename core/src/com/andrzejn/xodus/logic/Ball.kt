@@ -2,6 +2,7 @@ package com.andrzejn.xodus.logic
 
 import com.andrzejn.xodus.Context
 import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.utils.StringBuilder
 import kotlin.math.PI
 
 /**
@@ -119,6 +120,26 @@ class Ball(
             ).add(it)
             ctx.sd.filledCircle(v2, innerRadius / 6f, ctx.theme.eyeColor)
         }
+    }
+
+    /**
+     * Serialize the ball
+     */
+    fun serialize(sb: StringBuilder) {
+        sb.append(color).append(tile.coord.x, 2).append(tile.coord.y, 2).append(movingFromSide.ordinal)
+            .append(if (segment == null) "-" else segment?.type?.ordinal)
+    }
+
+    /**
+     * Deserialize the ball properties
+     */
+    fun deserialize(s: String, i: Int): Int {
+        movingFromSide = Side.values()[s[i].digitToInt()]
+        if (s[i + 1] != '-') {
+            val type = SegmentType.values()[s[i + 1].digitToInt()]
+            segment = tile.segment.first { it.type == type }
+        }
+        return i + 2
     }
 
 }

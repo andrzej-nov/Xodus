@@ -3,6 +3,7 @@ package com.andrzejn.xodus.logic
 import com.andrzejn.xodus.Context
 import com.badlogic.gdx.math.Polygon
 import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.utils.StringBuilder
 
 /**
  * The ball move intent from the tile side by one of tile segments to another side
@@ -31,18 +32,18 @@ class MoveIntent(
     /**
      * Tile segments coming from this side
      */
-    private val segments = tile.segment.filter { it.type.sides.contains(side) }
+    private var segments: List<TrackSegment> = emptyList()
 
     /**
      * Default segment (it is set if there is only one segment)
      */
-    private val defaultSegment = if (segments.size == 1) segments.first() else null
+    private var defaultSegment: TrackSegment? = null
 
     /**
      * Planned segment to move, or null when there is no segment selected yet (e.g. when the player should
      * select the segment from several possibilities)
      */
-    var intentSegment: TrackSegment? = defaultSegment
+    var intentSegment: TrackSegment? = null
 
     /**
      * Selector color. It is set to the ball color when the user chooses the selector, reset when the field changes
@@ -54,7 +55,30 @@ class MoveIntent(
      * The tile segment selected by the player for moving through this tile side, on null if there are several possible
      * segments and the player has not selected yet
      */
-    var selectorSegment: TrackSegment? = defaultSegment
+    var selectorSegment: TrackSegment? = null
+
+    /**
+     * Possible directions of this selector
+     */
+    private var directions: List<Side> = emptyList()
+
+    private var directionArrows: List<Pair<Side, Polygon>>? = null
+
+    init {
+        initialize()
+    }
+
+    /**
+     * Initialize intent fields after creation or after deserialization
+     */
+    fun initialize() {
+        segments = tile.segment.filter { it.type.sides.contains(side) }
+        defaultSegment = if (segments.size == 1) segments.first() else null
+        intentSegment = defaultSegment
+        selectorSegment = defaultSegment
+        directions = segments.flatMap { it.type.sides.toList() }.filter { it != side }
+        resetSelectorArrows()
+    }
 
     /**
      * Clear the intent (before the intents planning)
@@ -105,13 +129,6 @@ class MoveIntent(
     }
 
     /**
-     * Possible directions of this selector
-     */
-    private val directions: List<Side> = segments.flatMap { it.type.sides.toList() }.filter { it != side }
-
-    private var directionArrows: List<Pair<Side, Polygon>>? = null
-
-    /**
      * Returns the directionArrows list with the polygons already scaled and placed to required screen coordinates
      */
     private fun buildDirectionArrows(): List<Pair<Side, Polygon>> = directions.map { it to scaleArrow(it) }
@@ -151,6 +168,26 @@ class MoveIntent(
         if (directionArrows == null)
             directionArrows = buildDirectionArrows()
         return directionArrows!!.first { (s, _) -> s == side }.second.boundingRectangle.getCenter(v)
+    }
+
+    /**
+     * Serialize the intent selectors
+     */
+    fun serialize(sb: StringBuilder) {
+        sb.append(side.ordinal).append(selectorColor)
+            .append(if (selectorSegment == null) '-' else selectorSegment?.type?.ordinal)
+    }
+
+    /**
+     * Deserialize the intent selectors
+     */
+    fun deserialize(s: String, i: Int): Int {
+        selectorColor = s[i].digitToInt()
+        if (s[i + 1] != '-') {
+            val type = SegmentType.values()[s[i + 1].digitToInt()]
+            selectorSegment = tile.segment.first { it.type == type }
+        }
+        return i + 2
     }
 
     /**

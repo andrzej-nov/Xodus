@@ -7,19 +7,12 @@ import com.andrzejn.xodus.logic.Blot
 import com.andrzejn.xodus.logic.Field
 import com.andrzejn.xodus.logic.Shredder
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.assets.AssetManager
-import com.badlogic.gdx.assets.loaders.TextureAtlasLoader
-import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.*
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.setMaxTextureSize
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.Scaling
+import com.badlogic.gdx.utils.StringBuilder
 import com.badlogic.gdx.utils.viewport.*
-import ktx.assets.Asset
-import ktx.assets.loadOnDemand
 import space.earlygrey.shapedrawer.ShapeDrawer
 
 /**
@@ -120,6 +113,11 @@ class Context(
     val fieldCamPos: Vector3 get() = this.field.camera.position
 
     /**
+     * Deserialized value
+     */
+    private val savedCamPos = Vector2()
+
+    /**
      * Update camera on screen resize
      */
     fun setScreenSize(width: Int, height: Int) {
@@ -130,14 +128,29 @@ class Context(
      * Sets the game field viewport size and position
      */
     fun setFieldSize(basePos: Vector2) {
-        field = ScalingViewport(Scaling.none, cp.wholeFieldSize, cp.wholeFieldSize)
-        field.setScreenBounds(
-            basePos.x.toInt(),
-            basePos.y.toInt(),
-            cp.wholeFieldSize.toInt(),
-            cp.wholeFieldSize.toInt()
-        )
-        centerFieldCamera()
+        val prevWorldsSize = if (this::field.isInitialized) field.worldWidth else -1f
+        val basePosChanged =
+            if (this::field.isInitialized) cp.wholeFieldSize != prevWorldsSize || field.screenX != basePos.x.toInt() || field.screenY != basePos.y.toInt()
+            else true
+        if (basePosChanged) {
+            if (savedCamPos == Vector2.Zero && this::field.isInitialized && prevWorldsSize > 0) {
+                savedCamPos.set(fieldCamPos.x, fieldCamPos.y).scl(cp.wholeFieldSize / prevWorldsSize)
+            }
+            field = ScalingViewport(Scaling.none, cp.wholeFieldSize, cp.wholeFieldSize)
+            field.setScreenBounds(
+                basePos.x.toInt(),
+                basePos.y.toInt(),
+                cp.wholeFieldSize.toInt(),
+                cp.wholeFieldSize.toInt()
+            )
+        }
+        if (basePosChanged || savedCamPos != Vector2.Zero) {
+            if (savedCamPos != Vector2.Zero) {
+                fieldCamPos.set(savedCamPos, 0f)
+                savedCamPos.set(Vector2.Zero)
+            } else
+                centerFieldCamera()
+        }
     }
 
     /**
@@ -178,6 +191,22 @@ class Context(
         if (this::batch.isInitialized)
             batch.dispose()
         score.dispose()
+    }
+
+    /**
+     * Serialize the field viewport/camera settings
+     */
+    fun serialize(sb: StringBuilder) {
+        sb.append(fieldCamPos.x.toInt(), 4).append(fieldCamPos.y.toInt(), 4)
+    }
+
+
+    /**
+     * Deserialize the field viewport/camera settings
+     */
+    fun deserialize(s: String, i: Int): Int {
+        savedCamPos.set(s.substring(i..i + 3).toFloat(), s.substring(i + 4..i + 7).toFloat())
+        return i + 8
     }
 
 }

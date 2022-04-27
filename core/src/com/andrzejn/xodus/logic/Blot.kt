@@ -5,6 +5,8 @@ import com.andrzejn.xodus.Context
 import com.andrzejn.xodus.helper.TW_SCATTER
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.utils.StringBuilder
+import java.util.*
 import kotlin.random.Random
 
 /**
@@ -31,7 +33,7 @@ class Blot(
     /**
      * Blot center position relative to the baseTile.basePos. Multiply it to sideLen to get actual coordinates.
      */
-    private val basePos = Vector2(position).scl(1f / baseTile.sideLen) // Save a local copy of the vector
+    private var basePos = Vector2(position).scl(1f / baseTile.sideLen) // Save a local copy of the vector
 
     /**
      * Bigger blot circles, colored as the ball inner circle. Coordinates are relative to the basePos.
@@ -46,9 +48,20 @@ class Blot(
     private val smallerBlot = List(6) { Vector2() }
 
     init {
+        if (position != Vector2.Zero)
+            initBlots(true)
+    }
+
+    /**
+     * Initialize blot coordinates
+     */
+    private fun initBlots(doTween: Boolean) {
         biggerBlot.forEach { it.set(Random.nextFloat() * 0.5f - 0.25f, Random.nextFloat() * 0.5f - 0.25f) }
         smallerBlot.forEach { it.set(Random.nextFloat() * 0.8f - 0.4f, Random.nextFloat() * 0.8f - 0.4f) }
-        Tween.to(this, TW_SCATTER, 0.2f).target(1f).start(ctx.tweenManager)
+        if (doTween)
+            Tween.to(this, TW_SCATTER, 0.2f).target(1f).start(ctx.tweenManager)
+        else
+            scatter = 1f
     }
 
     /**
@@ -98,5 +111,24 @@ class Blot(
                 baseTile.coord
             ) { ctx.sd.filledCircle(it, radius) }
         }
+    }
+
+    /**
+     * Serialize the blot
+     */
+    fun serialize(sb: StringBuilder) {
+        sb.append(color).append(baseTile.coord.x, 2).append(baseTile.coord.y, 2)
+            .append(String.format(Locale.ROOT, "%05.3f", basePos.x))
+            .append(String.format(Locale.ROOT, "%05.3f", basePos.y))
+            .append(String.format(Locale.ROOT, "%05.3f", alpha))
+    }
+
+    /**
+     * Deserialize the blot fields
+     */
+    fun deserialize(s: String, i: Int) {
+        basePos.set(s.substring(i..i + 4).toFloat(), s.substring(i + 5..i + 9).toFloat())
+        alpha = s.substring(i + 10..i + 14).toFloat()
+        initBlots(false)
     }
 }

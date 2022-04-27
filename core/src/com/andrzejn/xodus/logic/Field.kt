@@ -4,6 +4,7 @@ import aurelienribon.tweenengine.Tween
 import com.andrzejn.xodus.Context
 import com.andrzejn.xodus.helper.TW_POSITION
 import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.utils.StringBuilder
 import kotlin.math.abs
 
 /**
@@ -102,7 +103,7 @@ class Field(
     /**
      * Set basePos for all tiles according to current scroll position.
      */
-    fun updateTilePositions() = applyToAllTiles { t ->
+    fun updateTilePositions(): Unit = applyToAllTiles { t ->
         ctx.cp.setTileBasePos(t.coord, t.basePos)
         t.intent.forEach { i -> i.resetSelectorArrows() }
     }
@@ -450,5 +451,68 @@ class Field(
      * Are there no more balls
      */
     fun noMoreBalls(): Boolean = ball.isEmpty()
+
+    /**
+     * Serialize the field tiles and balls
+     */
+    fun serialize(sb: StringBuilder) {
+        flatTile.forEach {
+            sb.append(it.coord.x, 2).append(it.coord.y, 2)
+            it.serialize(sb)
+        }
+        sb.append(ball.size)
+        ball.forEach { it.serialize(sb) }
+        sb.append(deadBall.size)
+        deadBall.forEach { it.serialize(sb) }
+        sb.append(blot.size)
+        blot.forEach { it.serialize(sb) }
+        sb.append(clickedSelectorColors.size)
+        clickedSelectorColors.forEach { sb.append(it) }
+    }
+
+    /**
+     * Deserialize the field tiles and balls
+     */
+    fun deserialize(s: String, i: Int) {
+        var j = i
+        repeat(flatTile.size) {
+            val x = s.substring(j..j + 1).toInt()
+            val y = s.substring(j + 2..j + 3).toInt()
+            val t = tile[x][y]
+            t.coord.set(x, y)
+            j = t.deserialize(s, j + 4)
+        }
+        repeat(s[j++].digitToInt()) {
+            ball.add(Ball(
+                s[j].digitToInt(),
+                this.tile[s.substring(j + 1..j + 2).toInt()][s.substring(j + 3..j + 4).toInt()]
+            ).apply {
+                j = this.deserialize(s, j + 5)
+            })
+        }
+        repeat(s[j++].digitToInt()) {
+            deadBall.add(Ball(
+                s[j].digitToInt(),
+                this.tile[s.substring(j + 1..j + 2).toInt()][s.substring(j + 3..j + 4).toInt()]
+            ).apply {
+                j = this.deserialize(s, j + 5)
+            })
+        }
+        repeat(s[j++].digitToInt()) {
+            blot.add(
+                Blot(
+                    ctx,
+                    s[j].digitToInt(),
+                    tile[s.substring(j + 1..j + 2).toInt()][s.substring(j + 3..j + 4).toInt()],
+                    Vector2.Zero
+                ).apply { deserialize(s, j + 5) }
+            )
+            j += 20
+        }
+        repeat(s[j++].digitToInt()) {
+            clickedSelectorColors.add(s[j++].digitToInt())
+        }
+        planTracks()
+    }
 
 }

@@ -29,13 +29,12 @@ class Main : KtxGame<KtxScreen>() {
         addScreen(CreditsScreen(ctx))
         addScreen(HomeScreen(ctx))
         Gdx.graphics.isContinuousRendering = false
-        setScreen<GameScreen>()
-        //newOrSavedGame()
+        newOrSavedGame()
     }
 
     private fun newOrSavedGame() {
         val s = ctx.sav.savedGame()
-        if (s.length > 26) {
+        if (s.length > 120) {
             getScreen<GameScreen>().newGame(true)
             setScreen<GameScreen>()
         } else

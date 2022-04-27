@@ -5,6 +5,7 @@ import com.andrzejn.xodus.logic.Coord
 import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
+import com.badlogic.gdx.utils.StringBuilder
 import kotlin.math.floor
 
 open class CoordProcessor constructor(private val ctx: Context) {
@@ -68,12 +69,38 @@ open class CoordProcessor constructor(private val ctx: Context) {
     }
 
     /**
+     * Serialize the scroll offset
+     */
+    fun serialize(sb: StringBuilder) {
+        sb.append(String.format("%03d", scrollOffset.x)).append(String.format("%03d", scrollOffset.y))
+    }
+
+
+    /**
+     * Deserialize the scroll offset
+     */
+    fun deserialize(s: String, i: Int): Int {
+        val cx = s.substring(i..i + 2).toInt()
+        val cy = s.substring(i + 3..i + 5).toInt()
+        scrollOffset.set(cx, cy)
+        recalculateFieldCorners()
+        return i + 6
+    }
+
+    /**
      * Applies scrolling to the field
      */
     fun scrollFieldBy(change: Coord) {
         ctx.fieldCamPos.x += sideLen * change.x
         ctx.fieldCamPos.y += sideLen * change.y
         scrollOffset.add(change)
+        recalculateFieldCorners()
+    }
+
+    /**
+     * Determine where on the logical field the visual field corners are placed
+     */
+    private fun recalculateFieldCorners() {
         bottomLeft.set(0, 0)
         bottomLeft.set(fieldIndexToTileIndex(bottomLeft))
         topRight.set(ctx.gs.fieldSize - 1, ctx.gs.fieldSize - 1)

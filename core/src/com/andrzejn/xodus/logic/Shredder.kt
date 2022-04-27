@@ -5,6 +5,8 @@ import aurelienribon.tweenengine.Tween
 import com.andrzejn.xodus.Context
 import com.andrzejn.xodus.helper.TW_POS_XY
 import com.andrzejn.xodus.helper.TW_Y
+import com.badlogic.gdx.utils.StringBuilder
+import java.util.*
 import kotlin.math.abs
 import kotlin.math.sign
 
@@ -156,5 +158,20 @@ class Shredder(fieldSize: Int) {
             x2 = x1 - dash / 2
             x1 = x2 - dash
         }
+    }
+
+    /**
+     * Serialize shredder position
+     */
+    fun serialize(sb: StringBuilder) {
+        sb.append(String.format(Locale.ROOT, "%06.2f", y))
+    }
+
+    /**
+     * Deerialize shredder position
+     */
+    fun deserialize(s: String, i: Int): Int {
+        y = s.substring(i..i + 5).toFloat()
+        return i + 6
     }
 }

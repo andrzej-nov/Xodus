@@ -35,11 +35,7 @@ class GameSettings {
         chaosMoves = iChaosMoves
         iReincarnation = pref.getBoolean(sREINCARNATION, true)
         reincarnation = iReincarnation
-        iShredderSpeed = when (pref.getInteger(sSHREDDERSPEED, 2)) {
-            1 -> 1f / 2
-            3 -> 3f / 4
-            else -> 2f / 3
-        }
+        iShredderSpeed = shredderIntToSpeed(pref.getInteger(sSHREDDERSPEED, 2))
         shredderSpeed = iShredderSpeed
         iDarkTheme = pref.getBoolean(sDARKTHEME, true)
         iInGameDuration = pref.getLong(sINGAMEDURATION, 0)
@@ -62,6 +58,15 @@ class GameSettings {
         in 0f..0.6f -> 1
         in 0.7f..1f -> 3
         else -> 2
+    }
+
+    /**
+     * Decode shredder speed from integer code
+     */
+    private fun shredderIntToSpeed(s: Int): Float = when (s) {
+        1 -> 1f / 2
+        3 -> 3f / 4
+        else -> 2f / 3
     }
 
     /**
@@ -161,28 +166,32 @@ class GameSettings {
      */
     fun serialize(sb: com.badlogic.gdx.utils.StringBuilder) {
         sb.append(iFieldSize, 2).append(chaosMoves).append(if (reincarnation) 1 else 0)
+            .append(shredderSpeedToInt(iShredderSpeed))
     }
 
     /**
      * Deserialize game settings from the saved game
      */
     fun deserialize(s: String): Boolean {
-        if (s.length != 6) { // TODO Fix the count when I know the settings size
+        if (s.length != 5) {
             reset()
             return false
         }
-        val fv = s.substring(0..1).toIntOrNull()
+        val fs = s.substring(0..1).toIntOrNull()
         val cm = s[2].digitToIntOrNull()
         val r = s[3] != '0'
-        if ((fv == null || fv !in listOf(5, 7, 9, 11))
+        val ss = s[4].digitToIntOrNull()
+        if ((fs == null || fs !in listOf(5, 7, 9, 11))
             || cm == null || cm !in 0..2
+            || ss == null || ss !in 1..3
         ) {
             reset()
             return false
         }
-        fieldSize = fv
+        fieldSize = fs
         chaosMoves = cm
         reincarnation = r
+        shredderSpeed = shredderIntToSpeed(ss)
         return true
     }
 }
