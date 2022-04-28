@@ -96,7 +96,7 @@ class GameScreen(
     private val ok = Sprite(ctx.a.ok).apply { setAlpha(0.8f) }
     private val settings = Sprite(ctx.a.settings).apply { setAlpha(0.8f) }
     private val exit = Sprite(ctx.a.exit).apply { setAlpha(0.8f) }
-    private val hand = Sprite(ctx.a.hand).apply { setAlpha(0.5f) }
+    private val hand = Sprite(ctx.a.hand).apply { setAlpha(0.7f) }
 
     private var inAutoMove = false
 
@@ -237,6 +237,8 @@ class GameScreen(
         ctx.tweenManager.update(if (graphics.isContinuousRendering) delta else 0.01f)
         // Hack to enable continuous rendering only when it is needed
         graphics.isContinuousRendering = ctx.tweenAnimationRunning()
+        if (inAutoMoveTile)
+            floatingTile.position.set(hand.x, hand.y).add(0f, ctx.cp.sideLen / 2)
         with(ctx.theme.screenBackground) {
             clearScreen(r, g, b, a, true)
         }
@@ -315,15 +317,21 @@ class GameScreen(
     /**
      * Set the selector or put the new tile into place, depending on current state
      */
-    private fun setSelectorOrPutNewTileAt(vf: Vector2) {
+    private fun setSelectorOrPutNewTileAt(vf: Vector2, newTileDragged: Boolean) {
         val nT = newTile
         if (field.selectorsHitTest(vf)) {
             if (nT == null && field.noMoreSelectors()) endOfTurn()
             return
         }
-        if (nT == null) return
-        val coord = ctx.cp.toFieldIndex(vf)
-        if (vf.y < 0 || coord.isNotSet()) cancelNewTileDrag(nT) else dropNewTileToField(coord, nT)
+        if (newTileDragged && nT != null) {
+            val coord = ctx.cp.toFieldIndex(vf)
+            if (vf.y >= 0 && !coord.isNotSet()) {
+                dropNewTileToField(coord, nT)
+                return
+            }
+        }
+        if (nT != null)
+            cancelNewTileDrag(nT)
     }
 
     private fun dropNewTileToField(
@@ -419,6 +427,8 @@ class GameScreen(
     private val vf2 = Vector2()
     private val c2 = Coord()
 
+    var inAutoMoveTile = false
+
     /**
      * Show player a random move. Not the best one, and not always even a good one. Just a random one, to show
      * the game controls.
@@ -436,11 +446,22 @@ class GameScreen(
         when (mt) {
             MoveTarget.NewTile -> {
                 val nT = newTile ?: return
+                v.set(newTilePos).sub(ctx.cp.sideLen / 2, ctx.cp.sideLen)
                 c2.set(ctx.cp.tileIndexToFieldIndex(field.suggestTileCoord()))
                 vf2.set(ctx.cp.toScreenCellCorner(c2).add(0f, -ctx.cp.sideLen / 2))
-                seq.push(Tween.to(hand, TW_POS_XY, 1f).target(vf2.x, vf2.y))
+                seq
+                    .push(Tween.to(hand, TW_POS_XY, 0.5f).target(v.x, v.y))
                     .pushPause(0.3f)
-                    .push(Tween.call { _, _ -> dropNewTileToField(c2, nT) })
+                    .push(Tween.call { _, _ ->
+                        inAutoMoveTile = true
+                        //dragStart.set(hand.x, hand.y)
+                    })
+                    .push(Tween.to(hand, TW_POS_XY, 1f).target(vf2.x, vf2.y))
+                    .pushPause(0.1f)
+                    .push(Tween.call { _, _ ->
+                        inAutoMoveTile = false
+                        dropNewTileToField(c2, nT)
+                    })
                     .pushPause(0.3f)
             }
             MoveTarget.Selector -> {
@@ -564,7 +585,10 @@ class GameScreen(
                 else -> if (dragFrom == DragSource.None || dragFrom == DragSource.NewTile || dragStart.dst(dragPos) < 4)
                 // The last condition is a safeguard against clicks with minor pointer slides that are erroneously
                 // interpreted as drags
-                    setSelectorOrPutNewTileAt(ctx.cp.pointerPositionField(screenX, screenY))
+                    setSelectorOrPutNewTileAt(
+                        ctx.cp.pointerPositionField(screenX, screenY),
+                        dragFrom == DragSource.NewTile
+                    )
             }
             inFieldDrag = false
             prevDragPos.set(Vector2.Zero)
