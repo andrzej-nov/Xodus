@@ -64,8 +64,7 @@ open class CoordProcessor constructor(private val ctx: Context) {
     fun resetScrollOffset() {
         scrollOffset.set(0, 0)
         ctx.centerFieldCamera()
-        bottomLeft.set(0, 0)
-        topRight.set(ctx.gs.fieldSize - 1, ctx.gs.fieldSize - 1)
+        recalculateFieldCorners()
     }
 
     /**
@@ -94,6 +93,7 @@ open class CoordProcessor constructor(private val ctx: Context) {
         ctx.fieldCamPos.x += sideLen * change.x
         ctx.fieldCamPos.y += sideLen * change.y
         scrollOffset.add(change)
+        scrollOffset.set(clipWrap(scrollOffset.x), clipWrap(scrollOffset.y))
         recalculateFieldCorners()
     }
 
@@ -101,10 +101,8 @@ open class CoordProcessor constructor(private val ctx: Context) {
      * Determine where on the logical field the visual field corners are placed
      */
     private fun recalculateFieldCorners() {
-        bottomLeft.set(0, 0)
-        bottomLeft.set(fieldIndexToTileIndex(bottomLeft))
-        topRight.set(ctx.gs.fieldSize - 1, ctx.gs.fieldSize - 1)
-        topRight.set(fieldIndexToTileIndex(topRight))
+        bottomLeft.set(fieldIndexToTileIndex(bottomLeft.set(0, 0)))
+        topRight.set(fieldIndexToTileIndex(topRight.set(ctx.gs.fieldSize - 1, ctx.gs.fieldSize - 1)))
     }
 
     /**

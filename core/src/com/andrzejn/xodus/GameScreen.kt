@@ -112,16 +112,16 @@ class GameScreen(
         ctx.cp.resetScrollOffset()
         shredder = Shredder(ctx.gs.fieldSize)
         ctx.score.reset()
-        if (loadSavedGame) /*try*/ {
+        if (loadSavedGame) try {
             val s = ctx.sav.savedGame()
             val i = ctx.sav.loadSettingsAndScore(s)
             if (i > 0)
                 deserialize(s, i)
             field.setSideLen(ctx.cp.sideLen) { t -> ctx.cp.setTileBasePos(t.coord, t.basePos) }
             return
-/*        } catch (ex: Exception) {
+        } catch (ex: Exception) {
             newGame(false)
-            return*/
+            return
             // Something wrong. Just proceed to recreate and start new game
         }
         field = Field(ctx).apply {

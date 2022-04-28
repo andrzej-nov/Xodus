@@ -174,7 +174,7 @@ class Field(
             b.segment = sideIntent.selectorSegment
         }
         if (b.segment == null) { // If we don't know where to move further then stop planning for that ball.
-            if (b.color !in clickedSelectorColors) openSelector.add(sideIntent)
+            if (step < 3 && b.color !in clickedSelectorColors) openSelector.add(sideIntent)
             return true
         }
         return false
