@@ -95,7 +95,7 @@ class Field(
     private fun createInitialBalls() {
         var tilePos = 1
         (1..(ctx.gs.fieldSize - 1) / 2).forEach {
-            ball.add(Ball(it, tile[tilePos][3]))
+            ball.add(Ball(it, tile[tilePos][2]))
             tilePos += 2
         }
     }
@@ -388,12 +388,23 @@ class Field(
      * Field pointer coordinates of suitable open selector, for auto-move
      */
     fun suggestOpenSelectorFieldCoord(): Vector2 {
-        val selectorIntent =
-            openSelector.filter { it.tile in ball.map { b -> b.tile } }.ifEmpty { openSelector }.random()
-        val selectorSegments = selectorIntent.tile.segment.filter { s -> s.type.sides.contains(selectorIntent.side) }
-        return selectorIntent.arrowCenter(selectorSegments.filter { it.type.sides.contains(Side.Top) }
-            .ifEmpty { selectorSegments }.random().type.sides.first { it != selectorIntent.side })
+        val myIntent = openSelector.filter { it.tile in ball.map { b -> b.tile } }.ifEmpty { openSelector }
+            .minByOrNull { it.trackStep } ?: return Vector2.Zero
+        val segments = myIntent.tile.segment.filter { s -> s.type.sides.contains(myIntent.side) }
+        val optimalSegment = if (segments.size == 1) segments.first()
+        else segments.minByOrNull { optimalDirection[myIntent.side]!!.indexOf(it.type) }
+        return myIntent.arrowCenter((optimalSegment ?: segments.random()).type.sides.first { it != myIntent.side })
     }
+
+    /**
+     * Possible segment types when moving from side, ordered by preferred direction
+     */
+    private val optimalDirection = mapOf(
+        Side.Top to listOf(SegmentType.ArcLT, SegmentType.ArcTR, SegmentType.LineBT),
+        Side.Left to listOf(SegmentType.ArcLT, SegmentType.LineLR, SegmentType.ArcBL),
+        Side.Right to listOf(SegmentType.ArcTR, SegmentType.LineLR, SegmentType.ArcRB),
+        Side.Bottom to listOf(SegmentType.LineBT, SegmentType.ArcBL, SegmentType.ArcRB)
+    )
 
     private val v = Vector2()
 
@@ -440,6 +451,15 @@ class Field(
         return fTile.filter { it.segment.any { s -> s.color.any { c -> c != 0 } } }
             .ifEmpty { ball.map { it.tile } }
             .ifEmpty { fTile }.random().coord
+    }
+
+
+    /**
+     * Return indexes of random tile that has an open selector, or then any random tile
+     */
+    fun suggestTileCoord(): Coord {
+        val fTile = flatTile
+        return openSelector.map { it.tile }.distinct().ifEmpty { fTile }.random().coord
     }
 
     /**

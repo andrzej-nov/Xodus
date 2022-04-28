@@ -434,7 +434,7 @@ class GameScreen(
         when (mt) {
             MoveTarget.NewTile -> {
                 val nT = newTile ?: return
-                c2.set(ctx.cp.tileIndexToFieldIndex(field.chaosTileCoord()))
+                c2.set(ctx.cp.tileIndexToFieldIndex(field.suggestTileCoord()))
                 vf2.set(ctx.cp.toScreenCellCorner(c2).add(0f, -ctx.cp.sideLen / 2))
                 seq.push(Tween.to(hand, TW_POS_XY, 1f).target(vf2.x, vf2.y))
                     .pushPause(0.3f)

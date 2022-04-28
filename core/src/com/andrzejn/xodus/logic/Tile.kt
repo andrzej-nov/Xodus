@@ -3,6 +3,7 @@ package com.andrzejn.xodus.logic
 import com.andrzejn.xodus.Context
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.StringBuilder
+import kotlin.random.Random
 
 /**
  * Square tile with track fragments on it. Once placed to the field, it is never moved until the whole bottom line
@@ -71,14 +72,20 @@ class Tile {
         val list = mutableListOf<TrackSegment>()
         val sidesCovered = mutableMapOf<Side, Int>()
         var types = SegmentType.values().apply { shuffle() }.toList()
-        while (sidesCovered.keys.size < 4) {
-            val type = types.first()
-            list.add(TrackSegment.of(type, this))
-            type.sides.forEach { sidesCovered[it] = (sidesCovered[it] ?: 0) + 1 }
-            val sidesWithEnoughSegments = sidesCovered.filterValues { it >= 2 }.keys
-            val typeSplit = types.drop(1).partition { t -> t.sides.none { sidesWithEnoughSegments.contains(it) } }
-            types = typeSplit.first.toMutableList().apply { addAll(typeSplit.second) }
-        }
+        var type = types.first()
+        types = types.drop(1)
+        list.add(TrackSegment.of(type, this))
+        if (Random.nextFloat() < 0.3f)
+            list.add(TrackSegment.of(type.complement(), this))
+        else
+            while (sidesCovered.keys.size < 4) {
+                type = types.first()
+                list.add(TrackSegment.of(type, this))
+                type.sides.forEach { sidesCovered[it] = (sidesCovered[it] ?: 0) + 1 }
+                val sidesWithEnoughSegments = sidesCovered.filterValues { it >= 2 }.keys
+                val typeSplit = types.drop(1).partition { t -> t.sides.none { sidesWithEnoughSegments.contains(it) } }
+                types = typeSplit.first.toMutableList().apply { addAll(typeSplit.second) }
+            }
         return list.toTypedArray()
     }
 

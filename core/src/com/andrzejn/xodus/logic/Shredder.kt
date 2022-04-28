@@ -21,7 +21,7 @@ class Shredder(fieldSize: Int) {
      * Current Shredder position, in cell sides. Add the screen scroll offset and multiply it to sideLen
      * to get actual screen coordinates.
      */
-    var y: Float = 1.1f
+    var y: Float = 0.2f
 
     private var inAdvance = false
 
