@@ -13,7 +13,10 @@ import com.badlogic.gdx.Gdx.graphics
 import com.badlogic.gdx.Gdx.input
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
+import com.badlogic.gdx.InputMultiplexer
 import com.badlogic.gdx.graphics.g2d.Sprite
+import com.badlogic.gdx.input.GestureDetector
+import com.badlogic.gdx.input.GestureDetector.GestureAdapter
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.StringBuilder
 import ktx.app.KtxScreen
@@ -32,9 +35,13 @@ class GameScreen(
 ) : KtxScreen {
 
     /**
-     * The input adapter instance for this screen
+     * The input multiplexer first calls our input adapter that does the most part of the processing,
+     * then the gesture adapter handles long presses and zooms
      */
-    private val ia = IAdapter()
+    private val im = InputMultiplexer().apply {
+        addProcessor(IAdapter())
+        addProcessor(GestureDetector(GAdapter()))
+    }
 
     /**
      * In-game time tracker.
@@ -145,7 +152,7 @@ class GameScreen(
      */
     override fun show() {
         super.show()
-        input.inputProcessor = ia
+        input.inputProcessor = im // ia
         timeStart = Calendar.getInstance().timeInMillis
     }
 
@@ -414,6 +421,7 @@ class GameScreen(
      * End of player's turn. Do Shredder and Chaos moves.
      */
     private fun endOfTurn() {
+        ctx.fieldScale = 1f
         if (field.noMoreBalls()) return
         ctx.score.incrementMoves()
         shredder.advance(ctx) { scrollFieldBy(scrollUp) }
@@ -427,7 +435,7 @@ class GameScreen(
     private val vf2 = Vector2()
     private val c2 = Coord()
 
-    var inAutoMoveTile = false
+    private var inAutoMoveTile = false
 
     /**
      * Show player a random move. Not the best one, and not always even a good one. Just a random one, to show
@@ -552,18 +560,25 @@ class GameScreen(
                     return super.touchDragged(screenX, screenY, pointer)
                 }
                 v.set(dragPos).sub(prevDragPos)
-                with(ctx.fieldCamPos) {
-                    x -= v.x
-                    y -= v.y
-                }
-                c.set(
-                    ((ctx.cp.wholeFieldSize / 2 - ctx.fieldCamPos.x) / ctx.cp.sideLen).toInt(),
-                    ((ctx.cp.wholeFieldSize / 2 - ctx.fieldCamPos.y) / ctx.cp.sideLen).toInt()
-                )
-                if (c.isNotZero())
-                    scrollFieldBy(c)
+                panFieldBy(v.x, v.y)
             }
             return super.touchDragged(screenX, screenY, pointer)
+        }
+
+        /**
+         * Perform field scrolling
+         */
+        private fun panFieldBy(deltaX: Float, deltaY: Float) {
+            with(ctx.fieldCamPos) {
+                x -= deltaX
+                y -= deltaY
+            }
+            c.set(
+                ((ctx.cp.wholeFieldSize / 2 - ctx.fieldCamPos.x) / ctx.cp.sideLen).toInt(),
+                ((ctx.cp.wholeFieldSize / 2 - ctx.fieldCamPos.y) / ctx.cp.sideLen).toInt()
+            )
+            if (c.isNotZero())
+                scrollFieldBy(c)
         }
 
         /**
@@ -599,10 +614,41 @@ class GameScreen(
         }
 
         /**
+         * Handle mouse wheel for field scrolling and panning on desktop
+         */
+        override fun scrolled(amountX: Float, amountY: Float): Boolean {
+            if (input.isKeyPressed(Input.Keys.CONTROL_LEFT) || input.isKeyPressed(Input.Keys.CONTROL_RIGHT))
+                ctx.fieldScale = ctx.fieldScale - amountY / 5f
+            else
+                panFieldBy(amountX * ctx.cp.sideLen, amountY * ctx.cp.sideLen)
+            return super.scrolled(amountX, amountY)
+        }
+
+        /**
          * Checks if particular button is touched.
          */
         private fun buttonTouched(v: Vector2, s: Sprite) = v.x in s.x..s.x + s.width && v.y in s.y..s.y + s.height
 
+    }
+
+    /**
+     * Our gesture adapter, for field zooming
+     */
+    inner class GAdapter : GestureAdapter() {
+        override fun longPress(x: Float, y: Float): Boolean {
+            ctx.fieldScale = 2f
+            return super.longPress(x, y)
+        }
+
+        override fun zoom(initialDistance: Float, distance: Float): Boolean {
+            var k = distance / initialDistance
+            if (k > 1)
+                k = 1 + (k - 1) / 2
+            else if (k < 1)
+                k = 1 - (1 - k) / 2
+            ctx.fieldScale = k
+            return super.zoom(initialDistance, distance)
+        }
     }
 
 }

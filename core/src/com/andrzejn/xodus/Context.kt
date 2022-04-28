@@ -127,6 +127,16 @@ class Context(
     }
 
     /**
+     * Get/set the field viewport scalint
+     */
+    var fieldScale: Float
+        get() = cp.wholeFieldSize / this.field.worldWidth
+        set(value) = this.field.setWorldSize(
+            cp.wholeFieldSize / value,
+            cp.wholeFieldSize / value
+        )
+
+    /**
      * Sets the game field viewport size and position
      */
     fun setFieldSize(basePos: Vector2) {
