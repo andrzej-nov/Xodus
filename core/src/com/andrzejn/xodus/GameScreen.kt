@@ -282,10 +282,12 @@ class GameScreen(
             ctx.cp.wholeFieldSize + sideLen * 2,
             ctx.cp.wholeFieldSize + sideLen * 2
         )
-        c.set(ctx.cp.toFieldIndex(ctx.cp.pointerPositionField(input.x, input.y)))
-        if (c.isSet()) {
-            v.set(ctx.cp.toFieldCellCorner(c))
-            ctx.sd.filledRectangle(v.x, v.y, sideLen, sideLen, ctx.theme.cellHilight)
+        if (input.isTouched) {
+            c.set(ctx.cp.toFieldIndex(ctx.cp.pointerPositionField(input.x, input.y)))
+            if (c.isSet()) {
+                v.set(ctx.cp.toFieldCellCorner(c))
+                ctx.sd.filledRectangle(v.x, v.y, sideLen, sideLen, ctx.theme.cellHilight)
+            }
         }
         renderFieldGrid()
         field.shredBalls { shredder.shreddedBalls(it) }

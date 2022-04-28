@@ -98,7 +98,7 @@ open class Atlas {
         dark = this.dark,
         eyeColor = Color.DARK_GRAY,
         gameBorders = Color.DARK_GRAY,
-        cellHilight = Color.LIGHT_GRAY,
+        cellHilight = Color.GRAY,
         shredderYellow = Color.GOLD,
         shredderRed = Color.RED,
         newTileSegment = Color.LIGHT_GRAY,
