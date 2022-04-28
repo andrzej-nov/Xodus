@@ -2,7 +2,9 @@
 
 **Xodus** is a small casual game based on stories of people evacuating from the war.
 
+![960x540](https://user-images.githubusercontent.com/89737218/165823298-ac353ae3-d0ef-4a3c-9bb7-67a6bb7fe8f1.jpg)
 
+https://user-images.githubusercontent.com/89737218/165823337-0669a28b-4005-4c90-a1e3-43e43e1c82f5.mp4
 
 **Game objective:** keep the balls alive and running. Avoid collisions and the Shredder line.
 You can replace the track sections on the field and choose moving direction on the track forks.
