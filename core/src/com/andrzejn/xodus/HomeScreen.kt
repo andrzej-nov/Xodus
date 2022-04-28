@@ -24,6 +24,8 @@ class HomeScreen(
     private val ia = IAdapter()
     private var fontItems: BitmapFont = BitmapFont()
     private lateinit var fcItems: BitmapFontCache
+    private var fontSettings: BitmapFont = BitmapFont()
+    private lateinit var fcNum: BitmapFontCache
 
     /**
      * Called by the GDX framework on screen change to this screen. When Home screen is shown,
@@ -46,16 +48,22 @@ class HomeScreen(
 
     private val logo = Sprite(ctx.a.logo)
     private val play = Sprite(ctx.a.play)
+    private val resume = Sprite(ctx.a.resume)
     private val exit = Sprite(ctx.a.exit)
     private val info = Sprite(ctx.a.info)
     private val gear = Sprite(ctx.a.gear)
     private val darktheme = Sprite(ctx.a.darktheme)
     private val lighttheme = Sprite(ctx.a.lighttheme)
 
+    private val sizearrows = Sprite(ctx.a.sizearrows)
+    private val chaos = Sprite(ctx.a.chaos)
+    private val recycle = Sprite(ctx.a.recycle)
+    private val death = Sprite(ctx.a.death)
+    private val shredder = Sprite(ctx.a.shredder)
+
     private var gridX = 0f
     private var gridY = 0f
     private val lineWidth = 2f
-    private var radius = 0f
     private var baseX = 0f
     private var baseWidth = 0f
 
@@ -65,38 +73,80 @@ class HomeScreen(
      */
     override fun resize(width: Int, height: Int) {
         super.resize(width, height)
+        if (width == 0 || height == 0) // Window minimize on desktop works that way
+            return
         ctx.setScreenSize(width, height)
         val baseHeight = Gdx.graphics.height.toFloat()
         baseWidth = min(Gdx.graphics.width.toFloat(), baseHeight * 3 / 4)
         baseX = (Gdx.graphics.width - baseWidth) / 2
         gridX = baseWidth / 12
-        gridY = baseHeight / 8
-        radius = min(2 * gridX, gridY) * 0.4f
+        gridY = baseHeight / 9
 
         ctx.cp.fitToRect(logo, baseWidth, 2 * gridY * 0.8f)
         logo.setPosition(
             (baseWidth - logo.width) / 2 + baseX,
-            gridY * 7 - logo.height / 2
+            gridY * 8 - logo.height / 2
         )
 
-        ctx.cp.fitToRect(darktheme, 3 * gridX * 0.7f, gridY * 0.7f)
+        ctx.cp.fitToRect(sizearrows, 2 * gridX * 0.8f, gridY * 0.8f)
+        sizearrows.setPosition(
+            gridX * 1.1f + baseX,
+            gridY * 6 + (gridY - sizearrows.height) / 2
+        )
+        ctx.cp.fitToRect(chaos, 2 * gridX * 0.8f, gridY * 0.8f)
+        chaos.setPosition(
+            gridX * 1.1f + baseX,
+            gridY * 5 + (gridY - chaos.height) / 2
+        )
+        ctx.cp.fitToRect(shredder, 2 * gridX * 0.8f, gridY * 0.8f)
+        shredder.setPosition(
+            gridX * 1.1f + baseX,
+            gridY * 4 + (gridY - shredder.height) / 2
+        )
+        ctx.cp.fitToRect(recycle, 3 * gridX * 0.8f, gridY * 0.8f)
+        recycle.setPosition(
+            4 * gridX - recycle.width / 2 + baseX,
+            gridY * 3 + (gridY - recycle.height) / 2
+        )
+        ctx.cp.fitToRect(death, 3 * gridX * 0.8f, gridY * 0.8f)
+        death.setPosition(
+            8 * gridX - death.width / 2 + baseX,
+            gridY * 3 + (gridY - death.height) / 2
+        )
+
+        ctx.cp.fitToRect(darktheme, 3 * gridX * 0.8f, gridY * 0.8f)
         darktheme.setPosition(
             4 * gridX - darktheme.width / 2 + baseX,
             gridY * 2 + (gridY - darktheme.height) / 2
         )
-        ctx.cp.fitToRect(lighttheme, 3 * gridX * 0.7f, gridY * 0.7f)
+        ctx.cp.fitToRect(lighttheme, 3 * gridX * 0.8f, gridY * 0.8f)
         lighttheme.setPosition(
             8 * gridX - lighttheme.width / 2 + baseX,
             gridY * 2 + (gridY - lighttheme.height) / 2
         )
 
+        fontSettings.dispose()
+        fontSettings = ctx.a.createFont((min(3 * gridX, gridY) * 0.8f).toInt())
+        fcNum = BitmapFontCache(fontSettings)
+        fcNum.setText("7", gridX * 3.5f + baseX, gridY * 6.8f, gridX, Align.bottom, false)
+        fcNum.addText("9", gridX * 6.5f + baseX, gridY * 6.8f, gridX, Align.bottom, false)
+        fcNum.addText("11", gridX * 10f + baseX, gridY * 6.8f, gridX, Align.bottom, false)
+        fcNum.addText("0", gridX * 3.5f + baseX, gridY * 5.8f, gridX, Align.bottom, false)
+        fcNum.addText("1", gridX * 6.5f + baseX, gridY * 5.8f, gridX, Align.bottom, false)
+        fcNum.addText("2", gridX * 10f + baseX, gridY * 5.8f, gridX, Align.bottom, false)
+        fcNum.addText("1", gridX * 3.5f + baseX, gridY * 4.8f, gridX, Align.bottom, false)
+        fcNum.addText("2", gridX * 6.5f + baseX, gridY * 4.8f, gridX, Align.bottom, false)
+        fcNum.addText("3", gridX * 10f + baseX, gridY * 4.8f, gridX, Align.bottom, false)
+        fcNum.setColors(ctx.theme.scorePoints)
+
         fontItems.dispose()
         fontItems = ctx.a.createFont((gridY * 0.3f).toInt())
         fcItems = BitmapFontCache(fontItems)
-        fcItems.addText("1.", baseX * 0.2f, gridY * 5 + fontItems.lineHeight * 1.5f, baseX * 0.7f, Align.right, false)
-        fcItems.addText("2.", baseX * 0.2f, gridY * 4 + fontItems.lineHeight * 1.5f, baseX * 0.7f, Align.right, false)
-        fcItems.addText("3.", baseX * 0.2f, gridY * 3 + fontItems.lineHeight * 1.5f, baseX * 0.7f, Align.right, false)
-        fcItems.addText("4.", baseX * 0.2f, gridY * 2 + fontItems.lineHeight * 1.5f, baseX * 0.7f, Align.right, false)
+        fcItems.addText("1.", baseX * 0.2f, gridY * 6 + fontItems.lineHeight * 1.5f, baseX * 0.7f, Align.right, false)
+        fcItems.addText("2.", baseX * 0.2f, gridY * 5 + fontItems.lineHeight * 1.5f, baseX * 0.7f, Align.right, false)
+        fcItems.addText("3.", baseX * 0.2f, gridY * 4 + fontItems.lineHeight * 1.5f, baseX * 0.7f, Align.right, false)
+        fcItems.addText("4.", baseX * 0.2f, gridY * 3 + fontItems.lineHeight * 1.5f, baseX * 0.7f, Align.right, false)
+        fcItems.addText("5.", baseX * 0.2f, gridY * 2 + fontItems.lineHeight * 1.5f, baseX * 0.7f, Align.right, false)
         fcItems.setColors(ctx.theme.settingItem)
 
         ctx.cp.fitToRect(gear, 2 * gridX * 0.5f, gridY * 0.5f)
@@ -127,11 +177,17 @@ class HomeScreen(
         with(ctx.theme.screenBackground) {
             clearScreen(r, g, b, a, true)
         }
+        ctx.drawToScreen()
         ctx.batch.begin()
         ctx.sd.rectangle(baseX, 0f, baseWidth, Gdx.graphics.height.toFloat(), ctx.theme.settingSeparator)
         logo.draw(ctx.batch)
         renderGameSettings()
-
+        fcNum.draw(ctx.batch)
+        sizearrows.draw(ctx.batch)
+        chaos.draw(ctx.batch)
+        shredder.draw(ctx.batch)
+        recycle.draw(ctx.batch)
+        death.draw(ctx.batch)
         darktheme.draw(ctx.batch)
         lighttheme.draw(ctx.batch)
         if (baseX / fontItems.lineHeight > 15f / 22f)
@@ -139,9 +195,9 @@ class HomeScreen(
 
         ctx.sd.line(
             baseX,
-            6 * gridY,
+            7 * gridY,
             12 * gridX + baseX,
-            6 * gridY,
+            7 * gridY,
             ctx.theme.settingSeparator,
             lineWidth
         )
@@ -153,10 +209,9 @@ class HomeScreen(
             ctx.theme.settingSeparator,
             lineWidth
         )
-
-        gear.setPosition(-gear.width / 2 + baseX, 6 * gridY - gear.height / 2)
+        gear.setPosition(-gear.width / 2 + baseX, 7 * gridY - gear.height / 2)
         gear.draw(ctx.batch)
-        gear.setPosition(12 * gridX - gear.width / 2 + baseX, 6 * gridY - gear.height / 2)
+        gear.setPosition(12 * gridX - gear.width / 2 + baseX, 7 * gridY - gear.height / 2)
         gear.draw(ctx.batch)
         gear.setPosition(-gear.width / 2 + baseX, 1.9f * gridY - gear.height / 2)
         gear.draw(ctx.batch)
@@ -172,8 +227,53 @@ class HomeScreen(
      * Render current game settings. When clicked/pressed, the settings changes are immediately saved and displayed.
      */
     private fun renderGameSettings() {
-        var y = gridY * 3.05f
-        var x = gridX * ((if (ctx.gs.reincarnation) 3f else 7f) - 0.2f) + baseX
+        var y = gridY * 6.05f
+        var x = gridX * (when (ctx.gs.fieldSize) {
+            7 -> 3f
+            9 -> 6f
+            else -> 9.2f
+        }) + baseX
+        ctx.sd.filledRectangle(
+            x,
+            y,
+            2.2f * gridX,
+            gridY * 0.9f,
+            0f,
+            ctx.theme.settingSelection, ctx.theme.settingSelection
+        )
+
+        y -= gridY
+        x = gridX * (when (ctx.gs.chaosMoves) {
+            0 -> 3f
+            1 -> 6f
+            else -> 9.2f
+        }) + baseX
+        ctx.sd.filledRectangle(
+            x,
+            y,
+            2.2f * gridX,
+            gridY * 0.9f,
+            0f,
+            ctx.theme.settingSelection, ctx.theme.settingSelection
+        )
+
+        y -= gridY
+        x = gridX * (when (ctx.gs.shredderSpeed) {
+            in 0f..0.55f -> 3f
+            in 0.55f..0.7f -> 6f
+            else -> 9.2f
+        }) + baseX
+        ctx.sd.filledRectangle(
+            x,
+            y,
+            2.2f * gridX,
+            gridY * 0.9f,
+            0f,
+            ctx.theme.settingSelection, ctx.theme.settingSelection
+        )
+
+        y -= gridY
+        x = gridX * ((if (ctx.gs.reincarnation) 3f else 7f) - 0.2f) + baseX
         ctx.sd.filledRectangle(
             x,
             y,
@@ -210,7 +310,25 @@ class HomeScreen(
                 return super.touchDown(screenX, screenY, pointer, button)
             v.x -= baseX
 
-            if (v.y in 3 * gridY..4 * gridY) {
+            if (v.y in 6 * gridY..7 * gridY) {
+                when (v.x) {
+                    in 2 * gridX..5 * gridX -> ctx.gs.fieldSize = 7
+                    in 6 * gridX..8 * gridX -> ctx.gs.fieldSize = 9
+                    in 9 * gridX..12 * gridX -> ctx.gs.fieldSize = 11
+                }
+            } else if (v.y in 5 * gridY..6 * gridY) {
+                when (v.x) {
+                    in 2 * gridX..5 * gridX -> ctx.gs.chaosMoves = 0
+                    in 6 * gridX..8 * gridX -> ctx.gs.chaosMoves = 1
+                    in 9 * gridX..12 * gridX -> ctx.gs.chaosMoves = 2
+                }
+            } else if (v.y in 4 * gridY..5 * gridY) {
+                when (v.x) {
+                    in 2 * gridX..5 * gridX -> ctx.gs.shredderSpeed = 1f / 2
+                    in 6 * gridX..8 * gridX -> ctx.gs.shredderSpeed = 2f / 3
+                    in 9 * gridX..12 * gridX -> ctx.gs.shredderSpeed = 3f / 4
+                }
+            } else if (v.y in 3 * gridY..4 * gridY) {
                 if (v.x in 3 * gridX..5 * gridX)
                     ctx.gs.reincarnation = true
                 else if (v.x in 7 * gridX..9 * gridX)

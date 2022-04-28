@@ -108,7 +108,6 @@ class GameScreen(
      * Start new game and load saved one if any
      */
     fun newGame(loadSavedGame: Boolean) {
-        updateInGameDuration()
         ctx.cp.resetScrollOffset()
         shredder = Shredder(ctx.gs.fieldSize)
         ctx.score.reset()
@@ -129,13 +128,14 @@ class GameScreen(
             setSideLen(ctx.cp.sideLen) { t -> ctx.cp.setTileBasePos(t.coord, t.basePos) }
         }
         createNewTile()
-        timeStart = Calendar.getInstance().timeInMillis
     }
 
     /**
      * Addns the last in-game duration to the total counter
      */
     private fun updateInGameDuration() {
+        if (ctx.gs.inGameDuration > 31536000000) // Milliseconds in year
+            ctx.gs.inGameDuration = 0
         ctx.gs.inGameDuration += Calendar.getInstance().timeInMillis - timeStart
         timeStart = Calendar.getInstance().timeInMillis
     }
@@ -472,6 +472,9 @@ class GameScreen(
         seq.start(ctx.tweenManager)
     }
 
+    /**
+     * Serialize the game contents
+     */
     fun serialize(sb: StringBuilder) {
         ctx.serialize(sb)
         ctx.cp.serialize(sb)
@@ -480,6 +483,9 @@ class GameScreen(
         field.serialize(sb)
     }
 
+    /**
+     * Deserialize the game contents
+     */
     private fun deserialize(s: String, i: Int) {
         var j = ctx.deserialize(s, i)
         j = ctx.cp.deserialize(s, j)

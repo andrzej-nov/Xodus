@@ -1,9 +1,8 @@
 package com.andrzejn.xodus.logic
 
 import com.andrzejn.xodus.Context
-import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.utils.StringBuilder
+import com.badlogic.gdx.math.Vector2
 
 /**
  * A track segment that fits into a single square tile. Always joins some two sides of the square, so it could be
@@ -132,7 +131,8 @@ abstract class TrackSegment(
      * Ensures that unplaced new tile is drawn in light color
      */
     protected fun colorFor(color: Int, ctx: Context): Color =
-        if (color == 0 && tile.coord.isNotSet()) ctx.theme.light[0] else ctx.theme.dark[color]
+        if (color != 0) ctx.theme.dark[color]
+        else if (tile.coord.isNotSet()) ctx.theme.newTileSegment else ctx.theme.placedTileSegment
 
     /**
      * Creates TrackSegment instances

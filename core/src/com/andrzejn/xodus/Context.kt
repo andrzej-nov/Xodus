@@ -117,6 +117,8 @@ class Context(
      */
     private val savedCamPos = Vector2()
 
+    private var deserializedScreenWidth: Int = 0
+
     /**
      * Update camera on screen resize
      */
@@ -146,6 +148,10 @@ class Context(
         }
         if (basePosChanged || savedCamPos != Vector2.Zero) {
             if (savedCamPos != Vector2.Zero) {
+                if (deserializedScreenWidth != 0) {
+                    savedCamPos.scl(cp.wholeFieldSize / deserializedScreenWidth)
+                    deserializedScreenWidth = 0
+                }
                 fieldCamPos.set(savedCamPos, 0f)
                 savedCamPos.set(Vector2.Zero)
             } else
@@ -197,7 +203,7 @@ class Context(
      * Serialize the field viewport/camera settings
      */
     fun serialize(sb: StringBuilder) {
-        sb.append(fieldCamPos.x.toInt(), 4).append(fieldCamPos.y.toInt(), 4)
+        sb.append(fieldCamPos.x.toInt(), 4).append(fieldCamPos.y.toInt(), 4).append(field.screenWidth, 4)
     }
 
 
@@ -206,7 +212,8 @@ class Context(
      */
     fun deserialize(s: String, i: Int): Int {
         savedCamPos.set(s.substring(i..i + 3).toFloat(), s.substring(i + 4..i + 7).toFloat())
-        return i + 8
+        deserializedScreenWidth = s.substring(i + 8..i + 11).toInt()
+        return i + 12
     }
 
 }

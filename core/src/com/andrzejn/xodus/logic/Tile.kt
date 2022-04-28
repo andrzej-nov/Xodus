@@ -75,7 +75,7 @@ class Tile {
         var type = types.first()
         types = types.drop(1)
         list.add(TrackSegment.of(type, this))
-        if (Random.nextFloat() < 0.3f)
+        if (Random.nextFloat() < 0.5f)
             list.add(TrackSegment.of(type.complement(), this))
         else
             while (sidesCovered.keys.size < 4) {

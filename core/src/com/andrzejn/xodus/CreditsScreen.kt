@@ -57,8 +57,10 @@ class CreditsScreen(
      */
     override fun resize(width: Int, height: Int) {
         super.resize(width, height)
-        gridX = Gdx.graphics.width.toFloat()
-        gridY = Gdx.graphics.height.toFloat()
+        if (width == 0 || height == 0) // Window minimize on desktop works that way
+            return
+        gridX = Gdx.graphics.width.toFloat() / 8
+        gridY = Gdx.graphics.height.toFloat() / 9
 
         ctx.cp.fitToRect(logo, Gdx.graphics.width.toFloat(), 2 * gridY * 0.8f)
         logo.setPosition(
@@ -125,6 +127,7 @@ class CreditsScreen(
         with(ctx.theme.screenBackground) {
             clearScreen(r, g, b, a, true)
         }
+        ctx.drawToScreen()
         ctx.batch.begin()
         logo.draw(ctx.batch)
         icongmail.draw(ctx.batch)

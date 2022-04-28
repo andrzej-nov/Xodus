@@ -1,6 +1,5 @@
 package com.andrzejn.xodus.helper
 
-import com.andrzejn.xodus.Context
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.assets.loaders.TextureAtlasLoader
@@ -26,15 +25,18 @@ open class Atlas {
     val gear: TextureRegion get() = texture("gear")
     val darktheme: TextureRegion get() = texture("darktheme")
     val lighttheme: TextureRegion get() = texture("lighttheme")
-    val icongmail: TextureRegion get() = texture("icongmail")
-    val icontelegram: TextureRegion get() = texture("icontelegram")
-    val icongithub: TextureRegion get() = texture("icongithub")
-    val chaos: TextureRegion get() = texture("chaos")
-    val logo: TextureRegion get() = texture("logo")
-    val sizearrows: TextureRegion get() = texture("sizearrows")
     val playblue: TextureRegion get() = texture("playblue")
     val resume: TextureRegion get() = texture("resume")
     val hand: TextureRegion get() = texture("hand")
+    val icongmail: TextureRegion get() = texture("icongmail")
+    val icontelegram: TextureRegion get() = texture("icontelegram")
+    val icongithub: TextureRegion get() = texture("icongithub")
+    val logo: TextureRegion get() = texture("logo")
+    val chaos: TextureRegion get() = texture("chaos")
+    val sizearrows: TextureRegion get() = texture("sizearrows")
+    val recycle: TextureRegion get() = texture("recycle")
+    val death: TextureRegion get() = texture("death")
+    val shredder: TextureRegion get() = texture("shredder")
 
     /**
      * Light (bright) colors palette for the tile lines
@@ -72,13 +74,15 @@ open class Atlas {
         creditsText = Color.NAVY,
         scorePoints = Color(Color.GOLD).apply { a = 0.7f },
         scoreMoves = Color(Color.CHARTREUSE).apply { a = 0.7f },
-        light = this.dark,
-        dark = this.light,
+        light = this.light,
+        dark = this.dark,
         eyeColor = Color.BLACK,
         gameBorders = Color.GRAY,
-        cellHilight = Color.DARK_GRAY,
+        cellHilight = Color.WHITE,
         shredderYellow = Color.GOLDENROD,
-        shredderRed = Color.FIREBRICK
+        shredderRed = Color.FIREBRICK,
+        newTileSegment = Color.DARK_GRAY,
+        placedTileSegment = Color.GRAY
     )
 
     val dk: Theme = Theme(
@@ -96,7 +100,9 @@ open class Atlas {
         gameBorders = Color.DARK_GRAY,
         cellHilight = Color.LIGHT_GRAY,
         shredderYellow = Color.GOLD,
-        shredderRed = Color.RED
+        shredderRed = Color.RED,
+        newTileSegment = Color.LIGHT_GRAY,
+        placedTileSegment = Color.DARK_GRAY
     )
 
     /**
@@ -152,6 +158,8 @@ open class Atlas {
         val gameBorders: Color,
         val cellHilight: Color,
         val shredderYellow: Color,
-        val shredderRed: Color
+        val shredderRed: Color,
+        val placedTileSegment: Color,
+        val newTileSegment: Color
     )
 }

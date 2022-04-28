@@ -81,12 +81,12 @@ icongithub
   index: -1
 darktheme
   rotate: false
-  xy: 570, 665
+  xy: 571, 665
   size: 150, 150
   index: -1
 lighttheme
   rotate: false
-  xy: 570, 815
+  xy: 571, 815
   size: 150, 150
   index: -1
 chaos
@@ -123,4 +123,9 @@ playblue
   rotate: false
   xy: 260, 880
   size: 100, 100
+  index: -1
+shredder
+  rotate: false
+  xy: 150, 990
+  size: 150, 150
   index: -1
