@@ -44,6 +44,11 @@ class GameScreen(
     }
 
     /**
+     * Set to true on first show call. Used by the Home/Settings screen to determone what to do on the Back button
+     */
+    var wasDisplayed = false
+
+    /**
      * In-game time tracker.
      */
     private var timeStart: Long = 0
@@ -152,7 +157,8 @@ class GameScreen(
      */
     override fun show() {
         super.show()
-        input.inputProcessor = im // ia
+        input.inputProcessor = im
+        wasDisplayed = true
         timeStart = Calendar.getInstance().timeInMillis
     }
 

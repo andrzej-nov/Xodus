@@ -1,6 +1,7 @@
 package com.andrzejn.xodus
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.BitmapFontCache
@@ -34,8 +35,9 @@ class HomeScreen(
      */
     override fun show() {
         super.show()
-        ctx.sav.clearSavedGame()
         Gdx.input.inputProcessor = ia
+        Gdx.input.setCatchKey(Input.Keys.BACK, true) // Override the Android 'Back' button
+        anySettingChanged = false
     }
 
     /**
@@ -44,6 +46,7 @@ class HomeScreen(
     override fun hide() {
         super.hide()
         Gdx.input.inputProcessor = null // Detach the input processor
+        Gdx.input.setCatchKey(Input.Keys.BACK, false) // Override the Android 'Back' button
     }
 
     private val logo = Sprite(ctx.a.logo)
@@ -66,6 +69,7 @@ class HomeScreen(
     private val lineWidth = 2f
     private var baseX = 0f
     private var baseWidth = 0f
+    private var anySettingChanged = false
 
     /**
      * Called by the GDX framework on screen resize (window resize, device rotation). Triggers all subsequent
@@ -155,6 +159,11 @@ class HomeScreen(
             6 * gridX - play.width / 2 + baseX,
             (2 * gridY - play.height) / 2
         )
+        ctx.cp.fitToRect(resume, 4 * gridX * 0.8f, 2 * gridY * 0.8f)
+        resume.setPosition(
+            6 * gridX - resume.width / 2 + baseX,
+            (2 * gridY - resume.height) / 2
+        )
         ctx.cp.fitToRect(exit, 2 * gridX * 0.8f, gridY * 0.8f)
         exit.setPosition(
             11 * gridX - exit.width / 2 + baseX,
@@ -217,11 +226,19 @@ class HomeScreen(
         gear.draw(ctx.batch)
         gear.setPosition(12 * gridX - gear.width / 2 + baseX, 1.9f * gridY - gear.height / 2)
         gear.draw(ctx.batch)
-        play.draw(ctx.batch)
+        if (isNewGame())
+            play.draw(ctx.batch)
+        else
+            resume.draw(ctx.batch)
         exit.draw(ctx.batch)
         info.draw(ctx.batch)
         ctx.batch.end()
     }
+
+    /**
+     * Should we start new game or resume current one
+     */
+    private fun isNewGame() = anySettingChanged || !ctx.game.getScreen<GameScreen>().wasDisplayed
 
     /**
      * Render current game settings. When clicked/pressed, the settings changes are immediately saved and displayed.
@@ -312,27 +329,57 @@ class HomeScreen(
 
             if (v.y in 6 * gridY..7 * gridY) {
                 when (v.x) {
-                    in 2 * gridX..5 * gridX -> ctx.gs.fieldSize = 7
-                    in 6 * gridX..8 * gridX -> ctx.gs.fieldSize = 9
-                    in 9 * gridX..12 * gridX -> ctx.gs.fieldSize = 11
+                    in 2 * gridX..5 * gridX -> {
+                        ctx.gs.fieldSize = 7
+                        anySettingChanged = true
+                    }
+                    in 6 * gridX..8 * gridX -> {
+                        ctx.gs.fieldSize = 9
+                        anySettingChanged = true
+                    }
+                    in 9 * gridX..12 * gridX -> {
+                        ctx.gs.fieldSize = 11
+                        anySettingChanged = true
+                    }
                 }
             } else if (v.y in 5 * gridY..6 * gridY) {
                 when (v.x) {
-                    in 2 * gridX..5 * gridX -> ctx.gs.chaosMoves = 0
-                    in 6 * gridX..8 * gridX -> ctx.gs.chaosMoves = 1
-                    in 9 * gridX..12 * gridX -> ctx.gs.chaosMoves = 2
+                    in 2 * gridX..5 * gridX -> {
+                        ctx.gs.chaosMoves = 0
+                        anySettingChanged = true
+                    }
+                    in 6 * gridX..8 * gridX -> {
+                        ctx.gs.chaosMoves = 1
+                        anySettingChanged = true
+                    }
+                    in 9 * gridX..12 * gridX -> {
+                        ctx.gs.chaosMoves = 2
+                        anySettingChanged = true
+                    }
                 }
             } else if (v.y in 4 * gridY..5 * gridY) {
                 when (v.x) {
-                    in 2 * gridX..5 * gridX -> ctx.gs.shredderSpeed = 1f / 2
-                    in 6 * gridX..8 * gridX -> ctx.gs.shredderSpeed = 2f / 3
-                    in 9 * gridX..12 * gridX -> ctx.gs.shredderSpeed = 3f / 4
+                    in 2 * gridX..5 * gridX -> {
+                        ctx.gs.shredderSpeed = 1f / 2
+                        anySettingChanged = true
+                    }
+                    in 6 * gridX..8 * gridX -> {
+                        ctx.gs.shredderSpeed = 2f / 3
+                        anySettingChanged = true
+                    }
+                    in 9 * gridX..12 * gridX -> {
+                        ctx.gs.shredderSpeed = 3f / 4
+                        anySettingChanged = true
+                    }
                 }
             } else if (v.y in 3 * gridY..4 * gridY) {
-                if (v.x in 3 * gridX..5 * gridX)
+                if (v.x in 3 * gridX..5 * gridX) {
                     ctx.gs.reincarnation = true
-                else if (v.x in 7 * gridX..9 * gridX)
+                    anySettingChanged = true
+                } else if (v.x in 7 * gridX..9 * gridX) {
                     ctx.gs.reincarnation = false
+                    anySettingChanged = true
+                }
             } else if (v.y in 2 * gridY..3 * gridY) {
                 if (v.x in 3 * gridX..5 * gridX) {
                     ctx.gs.isDarkTheme = true
@@ -342,7 +389,8 @@ class HomeScreen(
                     ctx.setTheme()
                 }
             } else if (v.y < 2 * gridY && v.x in 5 * gridX..7 * gridX) {
-                ctx.game.getScreen<GameScreen>().newGame(false)
+                if (isNewGame())
+                    ctx.game.getScreen<GameScreen>().newGame(false)
                 ctx.game.setScreen<GameScreen>()
             } else if (v.y < gridY && v.x > 10 * gridX)
                 Gdx.app.exit()
@@ -351,5 +399,17 @@ class HomeScreen(
             return super.touchDown(screenX, screenY, pointer, button)
         }
 
+        /**
+         * On Android 'Back' button switch back to the Home/Settings screen instead of default action
+         * (pausing the application)
+         */
+        override fun keyDown(keycode: Int): Boolean {
+            if (keycode == Input.Keys.BACK)
+                if (ctx.game.getScreen<GameScreen>().wasDisplayed)
+                    ctx.game.setScreen<GameScreen>()
+                else
+                    Gdx.app.exit()
+            return super.keyDown(keycode)
+        }
     }
 }
