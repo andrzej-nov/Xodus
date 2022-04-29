@@ -26,7 +26,7 @@ The game is auto-saved after each turn.
 
 The game is provided in two options:
 
-- **Desktop Java**. [Download Xodus.jar](https://github.com/andrzej-nov/Xodus/releases/download/v1.0/Xodus.jar).
+- **Desktop Java**. [Download Xodus.jar](https://github.com/andrzej-nov/Xodus/releases/download/v1.1/Xodus.jar).
   Run it with `java -jar Xodus.jar` command line, or in most cases just double-click the Xodus.jar 
   file. It has been tested with Java 18 Runtime, should also work with prior versions up to Java 8.
     - **On MacOS** you will get a warning about unidentified developer. Start the Xodus.jar 
@@ -36,7 +36,7 @@ The game is provided in two options:
 
 - **Android**. [Get it on Google Play](https://play.google.com/store/apps/details?id=com.andrzejn.xodus)
   (recommended, but not available yet because of the Google Play approval lag) or
-  [download the Xodus.apk](https://github.com/andrzej-nov/Xodus/releases/download/v1.0/Xodus.apk)
+  [download the Xodus.apk](https://github.com/andrzej-nov/Xodus/releases/download/v1.1/Xodus.apk)
   here for manual install (it might be sometimes also a newer version than on the Google Play). It has been tested
   on Android 8.0 and 10.0, should also work on any Android version starting from 4.4 and later.
 
