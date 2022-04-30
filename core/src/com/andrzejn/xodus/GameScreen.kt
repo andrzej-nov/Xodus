@@ -21,6 +21,7 @@ import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.StringBuilder
 import ktx.app.KtxScreen
 import ktx.app.clearScreen
+import kotlin.random.Random
 import java.util.*
 import kotlin.math.min
 
@@ -46,7 +47,7 @@ class GameScreen(
     /**
      * Set to true on first show call. Used by the Home/Settings screen to determone what to do on the Back button
      */
-    var wasDisplayed = false
+    var wasDisplayed: Boolean = false
 
     /**
      * In-game time tracker.
@@ -110,6 +111,14 @@ class GameScreen(
     private val exit = Sprite(ctx.a.exit).apply { setAlpha(0.8f) }
     private val hand = Sprite(ctx.a.hand).apply { setAlpha(0.7f) }
     private val updown = Sprite(ctx.a.updown).apply { setAlpha(0.8f) }
+    private val ghost = Sprite(ctx.a.ghost).apply {
+        setAlpha(0.7f)
+        setPosition(-1000f, -1000f)
+    }
+    private val balloon = Sprite(ctx.a.balloon).apply {
+        setAlpha(0.7f)
+        setPosition(-1000f, -1000f)
+    }
 
     private var inAutoMove = false
 
@@ -316,6 +325,10 @@ class GameScreen(
         ctx.score.draw(ctx.batch)
         if (inAutoMove)
             hand.draw(ctx.batch)
+        if (drawGhost) {
+            ghost.draw(ctx.batch)
+            balloon.draw(ctx.batch)
+        }
     }
 
     /**
@@ -429,8 +442,18 @@ class GameScreen(
      * Find a position for the Chaos move, create and put the tile there.
      */
     private fun chaosMove(move: Int) {
-        if (field.noMoreBalls())
+        if (field.noMoreBalls()) {
+            drawGhost = true
+            val sprite = (if (Random.nextFloat() < 0.5f) ghost else balloon).apply {
+                setSize(ctx.cp.sideLen * 2, ctx.cp.sideLen * 2)
+                setOriginCenter()
+                setPosition((graphics.width - width) / 2f, 0f)
+            }
+            Tween.to(sprite, TW_POS_XY, 3f).target((graphics.width - sprite.width) / 2f, graphics.height.toFloat())
+                .setCallback { _, _ -> drawGhost = false }
+                .start(ctx.tweenManager)
             return
+        }
         if (move <= 0) {
             createNewTile()
             ctx.sav.saveGame(this)
@@ -455,6 +478,8 @@ class GameScreen(
     }
 
     private val scrollUp = Coord(0, -1)
+
+    private var drawGhost = false
 
     /**
      * End of player's turn. Do Shredder and Chaos moves.

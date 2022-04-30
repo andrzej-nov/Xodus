@@ -41,7 +41,7 @@ class Field(
     /**
      * List of selectors that the player can (and should) select.
      */
-    val openSelector = mutableListOf<MoveIntent>()
+    val openSelector: MutableList<MoveIntent> = mutableListOf()
 
     /**
      * The list of selector colors already clicked on this move.
@@ -312,7 +312,9 @@ class Field(
         ctx.score.addPoints(collisions.distinct().size)
         deadBall.addAll(collisions)
         ball.removeAll(collisions)
-        collisions.distinct().forEach { blot.add(Blot(ctx, it.color, it.tile, it.currentPosition)) }
+        collisions.distinct().forEach {
+            blot.add(Blot(ctx, it.color, it.tile, it.currentPosition))
+        }
     }
 
     /**

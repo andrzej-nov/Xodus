@@ -134,3 +134,13 @@ updown
   xy: 0, 1030
   size: 100, 100
   index: -1
+ghost
+  rotate: false
+  xy: 420, 980
+  size: 150, 150
+  index: -1
+balloon
+  rotate: false
+  xy: 570, 980
+  size: 150, 150
+  index: -1
