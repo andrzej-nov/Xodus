@@ -37,6 +37,7 @@ open class Atlas {
     val recycle: TextureRegion get() = texture("recycle")
     val death: TextureRegion get() = texture("death")
     val shredder: TextureRegion get() = texture("shredder")
+    val updown: TextureRegion get() = texture("updown")
 
     /**
      * Light (bright) colors palette for the tile lines

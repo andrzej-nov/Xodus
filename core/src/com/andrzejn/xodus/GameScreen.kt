@@ -109,6 +109,7 @@ class GameScreen(
     private val settings = Sprite(ctx.a.settings).apply { setAlpha(0.8f) }
     private val exit = Sprite(ctx.a.exit).apply { setAlpha(0.8f) }
     private val hand = Sprite(ctx.a.hand).apply { setAlpha(0.7f) }
+    private val updown = Sprite(ctx.a.updown).apply { setAlpha(0.8f) }
 
     private var inAutoMove = false
 
@@ -222,9 +223,15 @@ class GameScreen(
         help.setBounds(offset, offset, buttonSize, buttonSize)
         settings.setBounds(width - sideLen + offset, sideLen + offset, buttonSize, buttonSize)
         exit.setBounds(width - sideLen + offset, offset, buttonSize, buttonSize)
-        if (width > height) ok.setPosition(newTilePos.x - sideLen / 2, newTilePos.y + sideLen)
-        else ok.setPosition(newTilePos.x + sideLen, newTilePos.y - sideLen / 2)
+        if (width > height) {
+            ok.setPosition(newTilePos.x - sideLen / 2, newTilePos.y + sideLen)
+            updown.setPosition(newTilePos.x - buttonSize / 2, newTilePos.y - sideLen - buttonSize)
+        } else {
+            ok.setPosition(newTilePos.x + sideLen, newTilePos.y - sideLen / 2)
+            updown.setPosition(newTilePos.x - sideLen - buttonSize, newTilePos.y - buttonSize / 2)
+        }
         ok.setSize(sideLen, sideLen)
+        updown.setSize(buttonSize, buttonSize)
         ctx.score.setCoords((sideLen / 2).toInt(), sideLen, width.toFloat())
         hand.setSize(sideLen, sideLen)
         hand.setOrigin(sideLen / 2, sideLen)
@@ -305,6 +312,7 @@ class GameScreen(
         settings.draw(ctx.batch)
         exit.draw(ctx.batch)
         ok.draw(ctx.batch)
+        updown.draw(ctx.batch)
         ctx.score.draw(ctx.batch)
         if (inAutoMove)
             hand.draw(ctx.batch)
@@ -357,10 +365,6 @@ class GameScreen(
      */
     private fun setSelectorOrPutNewTileAt(vf: Vector2, newTileDragged: Boolean) {
         val nT = newTile
-        if (field.selectorsHitTest(vf)) {
-            if (nT == null && field.noMoreSelectors()) endOfTurn()
-            return
-        }
         if (newTileDragged && nT != null) {
             val coord = ctx.cp.toFieldIndex(vf)
             if (vf.y >= 0 && !coord.isNotSet()) {
@@ -370,6 +374,10 @@ class GameScreen(
         }
         if (nT != null)
             cancelNewTileDrag(nT)
+        if (field.selectorsHitTest(vf)) {
+            if (nT == null && field.noMoreSelectors()) endOfTurn()
+            return
+        }
     }
 
     private fun dropNewTileToField(
@@ -453,6 +461,7 @@ class GameScreen(
      */
     private fun endOfTurn() {
         ctx.fieldScale = 1f
+        normalizeScrollOffcetByCells()
         if (field.noMoreBalls()) return
         ctx.score.incrementMoves()
         shredder.advance(ctx) { scrollFieldBy(scrollUp) }
@@ -611,6 +620,10 @@ class GameScreen(
                 buttonTouched(v, exit) -> Gdx.app.exit()
                 buttonTouched(v, settings) -> ctx.game.setScreen<HomeScreen>()
                 buttonTouched(v, ok) -> endOfTurn()
+                buttonTouched(v, updown) -> {
+                    ctx.toggleFieldScale()
+                    normalizeScrollOffcetByCells()
+                }
                 buttonTouched(v, help) -> autoMove()
                 else -> if (dragFrom == DragSource.None || dragFrom == DragSource.NewTile || dragStart.dst(dragPos) < 4)
                 // The last condition is a safeguard against clicks with minor pointer slides that are erroneously
@@ -654,11 +667,16 @@ class GameScreen(
          * Handle long-press event on the field
          */
         override fun longPress(x: Float, y: Float): Boolean {
-            if (withinTheField(x, y))
-                ctx.fieldScale = if (ctx.fieldScale <= 1) 2f else 1f
+            if (withinTheField(x, y)) {
+                ctx.toggleFieldScale()
+                normalizeScrollOffcetByCells()
+            }
             return super.longPress(x, y)
         }
 
+        /**
+         * Check if the screen coordinates are within the field square bounds
+         */
         private fun withinTheField(x: Float, y: Float) =
             x in basePos.x..basePos.x + ctx.cp.wholeFieldSize && y in basePos.y..basePos.y + ctx.cp.wholeFieldSize
 
@@ -718,7 +736,6 @@ class GameScreen(
         override fun pinchStop() {
             super.pinchStop()
             initialDistance = -1f
-            //normalizeScrollOffcetByCells()
         }
 
     }

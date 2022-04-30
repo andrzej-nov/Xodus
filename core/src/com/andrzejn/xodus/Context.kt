@@ -177,6 +177,14 @@ class Context(
         }
 
     /**
+     * Toogle the field scale between 1x and 2x
+     */
+    fun toggleFieldScale() {
+        fieldScale = if (fieldScale <= 1) 2f else 1f
+        normalizeFieldViewBounds()
+    }
+
+    /**
      * Sets the game field viewport size and position
      */
     fun setFieldSize(basePos: Vector2) {
