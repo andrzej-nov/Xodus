@@ -127,14 +127,54 @@ class Context(
     }
 
     /**
+     * Move the field viewport camera by the shift world coordinates.
+     * Ensures that the projected screen rectangle remains within the field contents
+     */
+    fun moveFieldCameraBy(shift: Vector2) {
+        with(fieldCamPos) { set(x - shift.x, y - shift.y, 0f) }
+        normalizeFieldViewBounds()
+    }
+
+    private val v = Vector2()
+
+    /**
+     * Ensures that the projected screen rectangle remains within the field contents
+     */
+    private fun normalizeFieldViewBounds() {
+        field.camera.update()
+        field.unproject(v.set(0f, 0f))
+        val leftBound = -cp.sideLen
+        if (v.x < leftBound)
+            fieldCamPos.x += v.x - leftBound
+        if (v.y < leftBound)
+            fieldCamPos.y += v.y - leftBound
+        field.camera.update()
+        field.unproject(v.set(cp.wholeFieldSize, cp.wholeFieldSize))
+        val rightBound = cp.wholeFieldSize + cp.sideLen
+        if (v.x > rightBound)
+            fieldCamPos.x += v.x - rightBound
+        if (v.y > rightBound)
+            fieldCamPos.y += v.y - rightBound
+        field.camera.update()
+    }
+
+    /**
      * Get/set the field viewport scalint
      */
     var fieldScale: Float
         get() = cp.wholeFieldSize / this.field.worldWidth
-        set(value) = this.field.setWorldSize(
-            cp.wholeFieldSize / value,
-            cp.wholeFieldSize / value
-        )
+        set(value) {
+            val k = when {
+                value < 1 -> 1f
+                value > 3 -> 3f
+                else -> value
+            }
+            this.field.setWorldSize(
+                cp.wholeFieldSize / k,
+                cp.wholeFieldSize / k
+            )
+            normalizeFieldViewBounds()
+        }
 
     /**
      * Sets the game field viewport size and position

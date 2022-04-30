@@ -39,8 +39,8 @@ class GameScreen(
      * then the gesture adapter handles long presses and zooms
      */
     private val im = InputMultiplexer().apply {
-        addProcessor(IAdapter())
         addProcessor(GestureDetector(GAdapter()))
+        addProcessor(IAdapter())
     }
 
     /**
@@ -230,16 +230,41 @@ class GameScreen(
         hand.setOrigin(sideLen / 2, sideLen)
     }
 
+    private val v = Vector2()
+    private val c = Coord()
+
     /**
-     * Applies scrolling to the field
+     * Smooth scroll field by field world coordinates
+     */
+    private fun panFieldBy(deltaX: Float, deltaY: Float) {
+        val k = ctx.fieldScale
+        with(ctx.fieldCamPos) {
+            x -= deltaX / k
+            y -= deltaY / k
+        }
+        normalizeScrollOffcetByCells()
+    }
+
+    /**
+     * When field camera position goes too far, adjust the field scroll offset by cells
+     */
+    private fun normalizeScrollOffcetByCells(): Coord {
+        c.set(
+            ((ctx.cp.wholeFieldSize / 2 - ctx.fieldCamPos.x) / ctx.cp.sideLen).toInt(),
+            ((ctx.cp.wholeFieldSize / 2 - ctx.fieldCamPos.y) / ctx.cp.sideLen).toInt()
+        )
+        if (c.isNotZero())
+            scrollFieldBy(c)
+        return c
+    }
+
+    /**
+     * Scroll field by field cells
      */
     private fun scrollFieldBy(c: Coord) {
         ctx.cp.scrollFieldBy(c)
         field.updateTilePositions()
     }
-
-    private val v = Vector2()
-    private val c = Coord()
 
     /**
      * Invoked on each screen rendering. Recalculates ball moves, invokes timer actions and draws rthe screen.
@@ -572,22 +597,6 @@ class GameScreen(
         }
 
         /**
-         * Perform field scrolling
-         */
-        private fun panFieldBy(deltaX: Float, deltaY: Float) {
-            with(ctx.fieldCamPos) {
-                x -= deltaX
-                y -= deltaY
-            }
-            c.set(
-                ((ctx.cp.wholeFieldSize / 2 - ctx.fieldCamPos.x) / ctx.cp.sideLen).toInt(),
-                ((ctx.cp.wholeFieldSize / 2 - ctx.fieldCamPos.y) / ctx.cp.sideLen).toInt()
-            )
-            if (c.isNotZero())
-                scrollFieldBy(c)
-        }
-
-        /**
          * Called when screen is untouched (mouse button released)
          */
         override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
@@ -641,20 +650,77 @@ class GameScreen(
      * Our gesture adapter, for field zooming
      */
     inner class GAdapter : GestureAdapter() {
+        /**
+         * Handle long-press event on the field
+         */
         override fun longPress(x: Float, y: Float): Boolean {
-            ctx.fieldScale = 2f
+            if (withinTheField(x, y))
+                ctx.fieldScale = if (ctx.fieldScale <= 1) 2f else 1f
             return super.longPress(x, y)
         }
 
-        override fun zoom(initialDistance: Float, distance: Float): Boolean {
+        private fun withinTheField(x: Float, y: Float) =
+            x in basePos.x..basePos.x + ctx.cp.wholeFieldSize && y in basePos.y..basePos.y + ctx.cp.wholeFieldSize
+
+        private var initialDistance = -1f
+        private val shift = Vector2()
+        private val initialWorldCenter = Vector2()
+
+        /**
+         * Handle pinch-zoom scaling
+         */
+        override fun pinch(
+            initialPointer1: Vector2?,
+            initialPointer2: Vector2?,
+            pointer1: Vector2?,
+            pointer2: Vector2?
+        ): Boolean {
+            if (initialPointer1 == null || initialPointer2 == null || pointer1 == null || pointer2 == null ||
+                !(withinTheField(initialPointer1.x, initialPointer1.y) || withinTheField(
+                    initialPointer2.x,
+                    initialPointer2.y
+                ))
+            )
+                return super.pinch(initialPointer1, initialPointer2, pointer1, pointer2)
+            if (initialDistance < 0) {
+                initialDistance = initialPointer1.dst(initialPointer2)
+                if (initialDistance <= 1f) {
+                    initialDistance = -1f
+                    return super.pinch(initialPointer1, initialPointer2, pointer1, pointer2)
+                }
+                ctx.field.unproject(
+                    initialWorldCenter.set(initialPointer2).sub(initialPointer1).setLength(initialDistance / 2)
+                        .add(initialPointer1)
+                )
+            }
+            val distance = pointer1.dst(pointer2)
             var k = distance / initialDistance
-            if (k > 1)
-                k = 1 + (k - 1) / 2
-            else if (k < 1)
-                k = 1 - (1 - k) / 2
-            ctx.fieldScale = k
-            return super.zoom(initialDistance, distance)
+            if (k > 1) k = 1 + (k - 1) / 2f
+            else if (k < 1) k = 1 - (1 - k) / 2f
+            ctx.fieldScale *= k
+            ctx.moveFieldCameraBy(
+                ctx.field.unproject(shift.set(pointer2).sub(pointer1).setLength(distance / 2).add(pointer1))
+                    .sub(initialWorldCenter)
+            )
+            val cshift = normalizeScrollOffcetByCells()
+            if (cshift.isNotZero()) with(initialWorldCenter) {
+                set(
+                    x + cshift.x * ctx.cp.sideLen,
+                    y + cshift.y * ctx.cp.sideLen
+                )
+            }
+            return true // Do not pass processing to the IAdapter drag processing
         }
+
+        /**
+         * Pinch-zooming ended
+         */
+        override fun pinchStop() {
+            super.pinchStop()
+            initialDistance = -1f
+            //normalizeScrollOffcetByCells()
+        }
+
     }
 
 }
