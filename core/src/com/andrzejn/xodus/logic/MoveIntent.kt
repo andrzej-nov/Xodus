@@ -118,10 +118,10 @@ class MoveIntent(
             arrows.forEach { (_, p) ->
                 with(ctx.sd) {
                     p.setPosition(it.x, it.y)
-                    setColor(ctx.theme.light[selectorColor])
+                    setColor(if (ctx.gs.isDarkTheme) ctx.theme.light[selectorColor] else ctx.theme.dark[selectorColor])
                     filledPolygon(p)
-                    setColor(ctx.theme.dark[selectorColor])
-                    polygon(p)
+                    setColor(if (ctx.gs.isDarkTheme) ctx.theme.dark[selectorColor] else ctx.theme.light[selectorColor])
+                    polygon(p, 2f)
                     p.setPosition(0f, 0f)
                 }
             }
