@@ -540,6 +540,7 @@ class GameScreen(
                     })
                     .pushPause(0.3f)
             }
+
             MoveTarget.Selector -> {
                 vf2.set(field.suggestOpenSelectorFieldCoord())
                 v.set(ctx.field.project(v.set(vf2))).sub(ctx.cp.sideLen / 2, ctx.cp.sideLen)
@@ -548,6 +549,7 @@ class GameScreen(
                     .push(Tween.call { _, _ -> field.selectorsHitTest(vf2) })
                     .pushPause(0.3f)
             }
+
             MoveTarget.EndOfTurn -> {
                 ok.boundingRectangle.getCenter(v)
                 v.sub(ctx.cp.sideLen / 2, ctx.cp.sideLen)
@@ -652,6 +654,7 @@ class GameScreen(
                     ctx.toggleFieldScale()
                     normalizeScrollOffcetByCells()
                 }
+
                 buttonTouched(v, help) -> autoMove()
                 else -> if (dragFrom == DragSource.None || dragFrom == DragSource.NewTile || dragStart.dst(dragPos) < 4)
                 // The last condition is a safeguard against clicks with minor pointer slides that are erroneously
@@ -674,7 +677,7 @@ class GameScreen(
          */
         override fun scrolled(amountX: Float, amountY: Float): Boolean {
             if (input.isKeyPressed(Input.Keys.CONTROL_LEFT) || input.isKeyPressed(Input.Keys.CONTROL_RIGHT))
-                ctx.fieldScale = ctx.fieldScale - amountY / 5f
+                ctx.fieldScale -= amountY / 5f
             else
                 panFieldBy(amountX * ctx.cp.sideLen, amountY * ctx.cp.sideLen)
             return super.scrolled(amountX, amountY)

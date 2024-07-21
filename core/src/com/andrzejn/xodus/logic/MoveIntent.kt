@@ -184,7 +184,7 @@ class MoveIntent(
     fun deserialize(s: String, i: Int): Int {
         selectorColor = s[i].digitToInt()
         if (s[i + 1] != '-') {
-            val type = SegmentType.values()[s[i + 1].digitToInt()]
+            val type = SegmentType.entries[s[i + 1].digitToInt()]
             selectorSegment = tile.segment.first { it.type == type }
         }
         return i + 2

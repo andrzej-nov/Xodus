@@ -27,6 +27,7 @@ class LineSegment(type: SegmentType, tile: Tile) : TrackSegment(type, tile) {
                     ends[0].set(value / 2, 0f)
                     ends[1].set(value / 2, value)
                 }
+
                 else -> {
                     ends[0].set(0f, value / 2)
                     ends[1].set(value, value / 2)

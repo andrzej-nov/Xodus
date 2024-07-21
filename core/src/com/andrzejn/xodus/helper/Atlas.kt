@@ -13,6 +13,7 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.setMaxTextur
 import ktx.assets.Asset
 import ktx.assets.loadOnDemand
 
+@Suppress("ArrayInDataClass", "LongLine")
 open class Atlas {
     private lateinit var atlas: Asset<TextureAtlas>
     val white: TextureRegion get() = texture("white")

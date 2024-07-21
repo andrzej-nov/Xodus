@@ -121,11 +121,11 @@ class Field(
         openSelector.clear()
         val ballsToClear = mutableSetOf<Ball>()
         while (movingBalls.isNotEmpty()) {
-            movingBalls.removeAll(collided(movingBalls))
+            movingBalls.removeAll(collided(movingBalls).toSet())
             movingBalls.forEach { b -> if (setIntents(b, step)) ballsToClear.add(b) }
             movingBalls.removeAll(ballsToClear)
             ballsToClear.clear()
-            movingBalls.removeAll(onCollisionCourse(movingBalls))
+            movingBalls.removeAll(onCollisionCourse(movingBalls).toSet())
             movingBalls.forEach { advanceToNextTile(it) }
             step++
         }
@@ -268,7 +268,7 @@ class Field(
             }
         }
         blot.forEach { it.fade() }
-        blot.removeAll(blot.filter { it.alpha <= 0 })
+        blot.removeAll(blot.filter { it.alpha <= 0 }.toSet())
         prepareBallSegmentColors()
         Tween.to(this, TW_POSITION, 1f).target(1f)
             .setCallback { _, _ ->
@@ -311,7 +311,7 @@ class Field(
             return
         ctx.score.addPoints(collisions.distinct().size)
         deadBall.addAll(collisions)
-        ball.removeAll(collisions)
+        ball.removeAll(collisions.toSet())
         collisions.distinct().forEach {
             blot.add(Blot(ctx, it.color, it.tile, it.currentPosition))
         }

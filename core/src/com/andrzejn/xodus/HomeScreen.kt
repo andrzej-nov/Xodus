@@ -333,10 +333,12 @@ class HomeScreen(
                         ctx.gs.fieldSize = 7
                         anySettingChanged = true
                     }
+
                     in 6 * gridX..8 * gridX -> {
                         ctx.gs.fieldSize = 9
                         anySettingChanged = true
                     }
+
                     in 9 * gridX..12 * gridX -> {
                         ctx.gs.fieldSize = 11
                         anySettingChanged = true
@@ -348,10 +350,12 @@ class HomeScreen(
                         ctx.gs.chaosMoves = 0
                         anySettingChanged = true
                     }
+
                     in 6 * gridX..8 * gridX -> {
                         ctx.gs.chaosMoves = 1
                         anySettingChanged = true
                     }
+
                     in 9 * gridX..12 * gridX -> {
                         ctx.gs.chaosMoves = 2
                         anySettingChanged = true
@@ -363,10 +367,12 @@ class HomeScreen(
                         ctx.gs.shredderSpeed = 1f / 2
                         anySettingChanged = true
                     }
+
                     in 6 * gridX..8 * gridX -> {
                         ctx.gs.shredderSpeed = 2f / 3
                         anySettingChanged = true
                     }
+
                     in 9 * gridX..12 * gridX -> {
                         ctx.gs.shredderSpeed = 3f / 4
                         anySettingChanged = true

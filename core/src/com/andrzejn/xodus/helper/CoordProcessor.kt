@@ -8,7 +8,7 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.StringBuilder
 import kotlin.math.floor
 
-open class CoordProcessor constructor(private val ctx: Context) {
+open class CoordProcessor(private val ctx: Context) {
     /**
      * Logical field coords to screen coords offset.
      * E.g. if the field has been visually scrolled by 1 cell to the right, then scrollOffset.x = 1

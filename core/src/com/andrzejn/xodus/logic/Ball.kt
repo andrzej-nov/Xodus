@@ -134,9 +134,9 @@ class Ball(
      * Deserialize the ball properties
      */
     fun deserialize(s: String, i: Int): Int {
-        movingFromSide = Side.values()[s[i].digitToInt()]
+        movingFromSide = Side.entries.toTypedArray()[s[i].digitToInt()]
         if (s[i + 1] != '-') {
-            val type = SegmentType.values()[s[i + 1].digitToInt()]
+            val type = SegmentType.entries[s[i + 1].digitToInt()]
             segment = tile.segment.first { it.type == type }
         }
         return i + 2

@@ -190,7 +190,8 @@ class Context(
     fun setFieldSize(basePos: Vector2) {
         val prevWorldsSize = if (this::field.isInitialized) field.worldWidth else -1f
         val basePosChanged =
-            if (this::field.isInitialized) cp.wholeFieldSize != prevWorldsSize || field.screenX != basePos.x.toInt() || field.screenY != basePos.y.toInt()
+            if (this::field.isInitialized) cp.wholeFieldSize != prevWorldsSize || field.screenX != basePos.x.toInt()
+                    || field.screenY != basePos.y.toInt()
             else true
         if (basePosChanged) {
             if (savedCamPos == Vector2.Zero && this::field.isInitialized && prevWorldsSize > 0) {

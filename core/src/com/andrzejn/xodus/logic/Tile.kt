@@ -27,7 +27,7 @@ class Tile {
      * track step number and requirement for segment selector here.
      * Also provides selector fields for the user to select the ball moving direction from this side.
      */
-    val intent: Array<MoveIntent> = Array(Side.values().size) { i -> MoveIntent(this, Side.values()[i]) }
+    val intent: Array<MoveIntent> = Array(Side.entries.size) { i -> MoveIntent(this, Side.entries[i]) }
 
     /**
      * Clear move intents
@@ -71,7 +71,7 @@ class Tile {
     private fun randomSegments(): Array<TrackSegment> {
         val list = mutableListOf<TrackSegment>()
         val sidesCovered = mutableMapOf<Side, Int>()
-        var types = SegmentType.values().apply { shuffle() }.toList()
+        var types = SegmentType.entries.toTypedArray().apply { shuffle() }.toList()
         var type = types.first()
         types = types.drop(1)
         list.add(TrackSegment.of(type, this))
@@ -119,7 +119,7 @@ class Tile {
     fun deserialize(s: String, i: Int): Int {
         var j = i
         segment = Array(s[j++].digitToInt()) {
-            TrackSegment.of(SegmentType.values()[s[j++].digitToInt()], this)
+            TrackSegment.of(SegmentType.entries[s[j++].digitToInt()], this)
         }
         repeat(intent.size) {
             with(intent[s[j].digitToInt()]) {
