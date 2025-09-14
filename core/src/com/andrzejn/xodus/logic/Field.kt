@@ -2,7 +2,7 @@ package com.andrzejn.xodus.logic
 
 import aurelienribon.tweenengine.Tween
 import com.andrzejn.xodus.Context
-import com.andrzejn.xodus.helper.TW_POSITION
+import com.andrzejn.xodus.helper.*
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.StringBuilder
 import kotlin.math.abs
@@ -327,7 +327,8 @@ class Field(
      */
     private fun advanceToNextTile(ball: Ball) {
         with(
-            otherSide(ball.tile,
+            otherSide(
+                ball.tile,
                 (ball.segment ?: segmentFromTileSide(ball) ?: return).type.sides.first { it != ball.movingFromSide })
         ) {
             ball.tile = first
@@ -505,20 +506,22 @@ class Field(
             j = t.deserialize(s, j + 4)
         }
         repeat(s[j++].digitToInt()) {
-            ball.add(Ball(
-                s[j].digitToInt(),
-                this.tile[s.substring(j + 1..j + 2).toInt()][s.substring(j + 3..j + 4).toInt()]
-            ).apply {
-                j = this.deserialize(s, j + 5)
-            })
+            ball.add(
+                Ball(
+                    s[j].digitToInt(),
+                    this.tile[s.substring(j + 1..j + 2).toInt()][s.substring(j + 3..j + 4).toInt()]
+                ).apply {
+                    j = this.deserialize(s, j + 5)
+                })
         }
         repeat(s[j++].digitToInt()) {
-            deadBall.add(Ball(
-                s[j].digitToInt(),
-                this.tile[s.substring(j + 1..j + 2).toInt()][s.substring(j + 3..j + 4).toInt()]
-            ).apply {
-                j = this.deserialize(s, j + 5)
-            })
+            deadBall.add(
+                Ball(
+                    s[j].digitToInt(),
+                    this.tile[s.substring(j + 1..j + 2).toInt()][s.substring(j + 3..j + 4).toInt()]
+                ).apply {
+                    j = this.deserialize(s, j + 5)
+                })
         }
         repeat(s[j++].digitToInt()) {
             blot.add(
